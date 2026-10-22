@@ -1,0 +1,737 @@
+{
+	"levels": [
+		{
+			"id": 11,
+			"seed": 3916074463,
+			"generatorVersion": 2,
+			"source": "generated",
+			"grid": {
+				"w": 5,
+				"h": 7
+			},
+			"holes": [
+				{
+					"color": "green",
+					"cell": [1, 4]
+				},
+				{
+					"color": "blue",
+					"cell": [2, 4]
+				},
+				{
+					"color": "red",
+					"cell": [0, 5]
+				}
+			],
+			"geckos": [
+				{
+					"id": "g1",
+					"color": "green",
+					"cells": [[3, 1], [3, 2], [2, 2]]
+				},
+				{
+					"id": "g2",
+					"color": "blue",
+					"cells": [[4, 5], [4, 4], [4, 3]]
+				},
+				{
+					"id": "g3",
+					"color": "red",
+					"cells": [[0, 2], [1, 2], [1, 3]]
+				}
+			],
+			"mechanics": [
+				"base",
+				"walls"
+			],
+			"mechanicData": {
+				"walls": [[1, 1], [3, 3], [2, 6]]
+			},
+			"timeLimit": 25,
+			"stars": {
+				"two": 0.3,
+				"three": 0.6
+			},
+			"meta": {
+				"minMoves": 9,
+				"difficulty": 1.2,
+				"optimal": true,
+				"dependency": 0.33,
+				"parkings": 0,
+				"tier": 0
+			}
+		},
+		{
+			"id": 12,
+			"name": "Largos y cortos",
+			"source": "handcrafted",
+			"tutorial": true,
+			"hint": "Los lagartos cortos giran en cualquier hueco; los largos necesitan espacio.",
+			"grid": {
+				"w": 6,
+				"h": 8
+			},
+			"holes": [
+				{
+					"color": "green",
+					"cell": [5, 0]
+				},
+				{
+					"color": "blue",
+					"cell": [0, 0]
+				},
+				{
+					"color": "red",
+					"cell": [0, 5]
+				}
+			],
+			"geckos": [
+				{
+					"id": "g1",
+					"color": "green",
+					"cells": [[0, 7], [1, 7], [2, 7], [3, 7], [4, 7]]
+				},
+				{
+					"id": "g2",
+					"color": "blue",
+					"cells": [[5, 6], [5, 7]]
+				},
+				{
+					"id": "g3",
+					"color": "red",
+					"cells": [[2, 3], [3, 3], [4, 3]]
+				}
+			],
+			"mechanics": [
+				"base",
+				"walls",
+				"lengths"
+			],
+			"mechanicData": {
+				"walls": [[1, 1], [2, 1], [3, 1], [1, 5], [2, 5]]
+			},
+			"timeLimit": 60,
+			"stars": {
+				"two": 0.3,
+				"three": 0.6
+			},
+			"meta": {
+				"parkings": 0,
+				"tier": 0
+			}
+		},
+		{
+			"id": 13,
+			"seed": 2511854497,
+			"generatorVersion": 2,
+			"source": "generated",
+			"grid": {
+				"w": 5,
+				"h": 7
+			},
+			"holes": [
+				{
+					"color": "green",
+					"cell": [4, 6]
+				},
+				{
+					"color": "blue",
+					"cell": [4, 5]
+				},
+				{
+					"color": "red",
+					"cell": [1, 0]
+				},
+				{
+					"color": "yellow",
+					"cell": [4, 3]
+				},
+				{
+					"color": "purple",
+					"cell": [1, 3]
+				}
+			],
+			"geckos": [
+				{
+					"id": "g1",
+					"color": "green",
+					"cells": [[2, 3], [2, 2], [1, 2], [1, 1]]
+				},
+				{
+					"id": "g2",
+					"color": "blue",
+					"cells": [[0, 6], [1, 6], [1, 5], [0, 5]]
+				},
+				{
+					"id": "g3",
+					"color": "red",
+					"cells": [[2, 1], [3, 1], [3, 0], [2, 0]]
+				},
+				{
+					"id": "g4",
+					"color": "yellow",
+					"cells": [[2, 6], [2, 5], [2, 4]]
+				},
+				{
+					"id": "g5",
+					"color": "purple",
+					"cells": [[3, 5], [3, 4], [3, 3], [3, 2]]
+				}
+			],
+			"mechanics": [
+				"base",
+				"walls",
+				"lengths"
+			],
+			"mechanicData": {
+				"walls": [[4, 4], [0, 3]]
+			},
+			"timeLimit": 35,
+			"stars": {
+				"two": 0.3,
+				"three": 0.6
+			},
+			"meta": {
+				"minMoves": 18,
+				"difficulty": 3.6,
+				"optimal": true,
+				"dependency": 0.8,
+				"parkings": 1,
+				"tier": 1
+			}
+		},
+		{
+			"id": 14,
+			"seed": 4044292452,
+			"generatorVersion": 2,
+			"source": "generated",
+			"grid": {
+				"w": 5,
+				"h": 7
+			},
+			"holes": [
+				{
+					"color": "green",
+					"cell": [2, 2]
+				},
+				{
+					"color": "blue",
+					"cell": [0, 0]
+				},
+				{
+					"color": "red",
+					"cell": [1, 6]
+				}
+			],
+			"geckos": [
+				{
+					"id": "g1",
+					"color": "green",
+					"cells": [[0, 2], [0, 3], [1, 3]]
+				},
+				{
+					"id": "g2",
+					"color": "blue",
+					"cells": [[1, 1], [1, 2]]
+				},
+				{
+					"id": "g3",
+					"color": "red",
+					"cells": [[1, 4], [2, 4], [2, 3], [3, 3]]
+				}
+			],
+			"mechanics": [
+				"base",
+				"walls",
+				"lengths"
+			],
+			"mechanicData": {
+				"walls": [[0, 1], [4, 4], [4, 2]]
+			},
+			"timeLimit": 20,
+			"stars": {
+				"two": 0.3,
+				"three": 0.6
+			},
+			"meta": {
+				"minMoves": 6,
+				"difficulty": 0.8,
+				"optimal": true,
+				"dependency": 0.33,
+				"parkings": 0,
+				"tier": 0
+			}
+		},
+		{
+			"id": 15,
+			"seed": 2502664936,
+			"generatorVersion": 2,
+			"source": "generated",
+			"grid": {
+				"w": 5,
+				"h": 7
+			},
+			"holes": [
+				{
+					"color": "green",
+					"cell": [3, 6]
+				},
+				{
+					"color": "blue",
+					"cell": [1, 4]
+				},
+				{
+					"color": "red",
+					"cell": [0, 4]
+				}
+			],
+			"geckos": [
+				{
+					"id": "g1",
+					"color": "green",
+					"cells": [[4, 5], [4, 4], [3, 4]]
+				},
+				{
+					"id": "g2",
+					"color": "blue",
+					"cells": [[2, 2], [2, 1], [2, 0]]
+				},
+				{
+					"id": "g3",
+					"color": "red",
+					"cells": [[1, 5], [0, 5], [0, 6]]
+				}
+			],
+			"mechanics": [
+				"base",
+				"walls",
+				"lengths"
+			],
+			"mechanicData": {
+				"walls": [[2, 6], [3, 0], [4, 3]]
+			},
+			"timeLimit": 20,
+			"stars": {
+				"two": 0.3,
+				"three": 0.6
+			},
+			"meta": {
+				"minMoves": 7,
+				"difficulty": 0.7,
+				"optimal": true,
+				"dependency": 0,
+				"parkings": 0,
+				"tier": 0
+			}
+		},
+		{
+			"id": 16,
+			"seed": 2046710797,
+			"generatorVersion": 2,
+			"source": "generated",
+			"grid": {
+				"w": 5,
+				"h": 7
+			},
+			"holes": [
+				{
+					"color": "green",
+					"cell": [3, 5]
+				},
+				{
+					"color": "blue",
+					"cell": [2, 2]
+				},
+				{
+					"color": "red",
+					"cell": [4, 5]
+				},
+				{
+					"color": "yellow",
+					"cell": [0, 6]
+				}
+			],
+			"geckos": [
+				{
+					"id": "g1",
+					"color": "green",
+					"cells": [[3, 6], [4, 6]]
+				},
+				{
+					"id": "g2",
+					"color": "blue",
+					"cells": [[1, 0], [2, 0]]
+				},
+				{
+					"id": "g3",
+					"color": "red",
+					"cells": [[4, 2], [4, 3], [4, 4], [3, 4]]
+				},
+				{
+					"id": "g4",
+					"color": "yellow",
+					"cells": [[1, 3], [1, 2]]
+				}
+			],
+			"mechanics": [
+				"base",
+				"walls",
+				"lengths"
+			],
+			"mechanicData": {
+				"walls": [[3, 0], [2, 6], [2, 5]]
+			},
+			"timeLimit": 25,
+			"stars": {
+				"two": 0.3,
+				"three": 0.6
+			},
+			"meta": {
+				"minMoves": 9,
+				"difficulty": 0.9,
+				"optimal": true,
+				"dependency": 0,
+				"parkings": 0,
+				"tier": 0
+			}
+		},
+		{
+			"id": 17,
+			"seed": 3390814640,
+			"generatorVersion": 2,
+			"source": "generated",
+			"grid": {
+				"w": 5,
+				"h": 7
+			},
+			"holes": [
+				{
+					"color": "green",
+					"cell": [3, 2]
+				},
+				{
+					"color": "blue",
+					"cell": [0, 6]
+				},
+				{
+					"color": "red",
+					"cell": [4, 2]
+				},
+				{
+					"color": "yellow",
+					"cell": [3, 3]
+				},
+				{
+					"color": "purple",
+					"cell": [4, 6]
+				},
+				{
+					"color": "orange",
+					"cell": [1, 0]
+				}
+			],
+			"geckos": [
+				{
+					"id": "g1",
+					"color": "green",
+					"cells": [[3, 5], [4, 5]]
+				},
+				{
+					"id": "g2",
+					"color": "blue",
+					"cells": [[1, 2], [0, 2], [0, 1]]
+				},
+				{
+					"id": "g3",
+					"color": "red",
+					"cells": [[3, 6], [2, 6]]
+				},
+				{
+					"id": "g4",
+					"color": "yellow",
+					"cells": [[3, 0], [3, 1], [4, 1]]
+				},
+				{
+					"id": "g5",
+					"color": "purple",
+					"cells": [[2, 3], [2, 2], [2, 1], [1, 1]]
+				},
+				{
+					"id": "g6",
+					"color": "orange",
+					"cells": [[1, 3], [1, 4], [1, 5], [2, 5]]
+				}
+			],
+			"mechanics": [
+				"base",
+				"walls",
+				"lengths"
+			],
+			"mechanicData": {
+				"walls": [[0, 3], [2, 4]]
+			},
+			"timeLimit": 65,
+			"stars": {
+				"two": 0.3,
+				"three": 0.6
+			},
+			"meta": {
+				"minMoves": 38,
+				"difficulty": 12,
+				"optimal": false,
+				"dependency": 1,
+				"parkings": 2,
+				"tier": 2
+			}
+		},
+		{
+			"id": 18,
+			"seed": 427082870,
+			"generatorVersion": 2,
+			"source": "generated",
+			"grid": {
+				"w": 5,
+				"h": 7
+			},
+			"holes": [
+				{
+					"color": "green",
+					"cell": [1, 2]
+				},
+				{
+					"color": "blue",
+					"cell": [0, 3]
+				},
+				{
+					"color": "red",
+					"cell": [2, 1]
+				},
+				{
+					"color": "yellow",
+					"cell": [0, 5]
+				}
+			],
+			"geckos": [
+				{
+					"id": "g1",
+					"color": "green",
+					"cells": [[3, 2], [3, 1]]
+				},
+				{
+					"id": "g2",
+					"color": "blue",
+					"cells": [[2, 2], [2, 3], [2, 4]]
+				},
+				{
+					"id": "g3",
+					"color": "red",
+					"cells": [[4, 0], [3, 0], [2, 0], [1, 0]]
+				},
+				{
+					"id": "g4",
+					"color": "yellow",
+					"cells": [[1, 3], [1, 4], [1, 5]]
+				}
+			],
+			"mechanics": [
+				"base",
+				"walls",
+				"lengths"
+			],
+			"mechanicData": {
+				"walls": [[3, 6], [2, 5], [3, 5], [0, 2]]
+			},
+			"timeLimit": 20,
+			"stars": {
+				"two": 0.3,
+				"three": 0.6
+			},
+			"meta": {
+				"minMoves": 8,
+				"difficulty": 1.2,
+				"optimal": true,
+				"dependency": 0.5,
+				"parkings": 0,
+				"tier": 0
+			}
+		},
+		{
+			"id": 19,
+			"seed": 4158400387,
+			"generatorVersion": 2,
+			"source": "generated",
+			"grid": {
+				"w": 5,
+				"h": 7
+			},
+			"holes": [
+				{
+					"color": "green",
+					"cell": [1, 4]
+				},
+				{
+					"color": "blue",
+					"cell": [2, 3]
+				},
+				{
+					"color": "red",
+					"cell": [3, 5]
+				},
+				{
+					"color": "yellow",
+					"cell": [0, 1]
+				},
+				{
+					"color": "purple",
+					"cell": [0, 2]
+				}
+			],
+			"geckos": [
+				{
+					"id": "g1",
+					"color": "green",
+					"cells": [[4, 1], [4, 2], [3, 2]]
+				},
+				{
+					"id": "g2",
+					"color": "blue",
+					"cells": [[1, 5], [1, 6], [0, 6]]
+				},
+				{
+					"id": "g3",
+					"color": "red",
+					"cells": [[4, 0], [3, 0], [2, 0], [2, 1]]
+				},
+				{
+					"id": "g4",
+					"color": "yellow",
+					"cells": [[4, 4], [3, 4], [2, 4]]
+				},
+				{
+					"id": "g5",
+					"color": "purple",
+					"cells": [[4, 5], [4, 6], [3, 6]]
+				}
+			],
+			"mechanics": [
+				"base",
+				"walls",
+				"lengths"
+			],
+			"mechanicData": {
+				"walls": [[2, 2], [1, 3]]
+			},
+			"timeLimit": 45,
+			"stars": {
+				"two": 0.3,
+				"three": 0.6
+			},
+			"meta": {
+				"minMoves": 26,
+				"difficulty": 5.6,
+				"optimal": true,
+				"dependency": 1,
+				"parkings": 1,
+				"tier": 1
+			}
+		},
+		{
+			"id": 20,
+			"seed": 3164710138,
+			"generatorVersion": 2,
+			"source": "generated",
+			"grid": {
+				"w": 6,
+				"h": 8
+			},
+			"holes": [
+				{
+					"color": "green",
+					"cell": [2, 0]
+				},
+				{
+					"color": "blue",
+					"cell": [4, 6]
+				},
+				{
+					"color": "red",
+					"cell": [3, 5]
+				},
+				{
+					"color": "yellow",
+					"cell": [4, 7]
+				},
+				{
+					"color": "purple",
+					"cell": [3, 4]
+				},
+				{
+					"color": "orange",
+					"cell": [4, 1]
+				},
+				{
+					"color": "cyan",
+					"cell": [5, 3]
+				}
+			],
+			"geckos": [
+				{
+					"id": "g1",
+					"color": "green",
+					"cells": [[5, 5], [5, 4], [4, 4], [4, 3]]
+				},
+				{
+					"id": "g2",
+					"color": "blue",
+					"cells": [[0, 2], [0, 1], [1, 1], [2, 1]]
+				},
+				{
+					"id": "g3",
+					"color": "red",
+					"cells": [[3, 1], [3, 0]]
+				},
+				{
+					"id": "g4",
+					"color": "yellow",
+					"cells": [[4, 2], [3, 2]]
+				},
+				{
+					"id": "g5",
+					"color": "purple",
+					"cells": [[0, 4], [0, 5], [1, 5]]
+				},
+				{
+					"id": "g6",
+					"color": "orange",
+					"cells": [[2, 5], [2, 4], [2, 3], [2, 2]]
+				},
+				{
+					"id": "g7",
+					"color": "cyan",
+					"cells": [[3, 6], [2, 6], [2, 7]]
+				}
+			],
+			"mechanics": [
+				"base",
+				"walls",
+				"lengths"
+			],
+			"mechanicData": {
+				"walls": [[1, 7], [1, 3], [5, 2]]
+			},
+			"timeLimit": 60,
+			"stars": {
+				"two": 0.3,
+				"three": 0.6
+			},
+			"meta": {
+				"minMoves": 35,
+				"difficulty": 7.7,
+				"optimal": false,
+				"dependency": 1,
+				"parkings": 2,
+				"tier": 2
+			}
+		}
+	]
+}
