@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { PointerEvent as ReactPointerEvent, RefObject } from "react";
-import type { Cell } from "../engine";
-import type { GameSession } from "../state/gameSession";
+import type { GameSession, Point } from "../state/gameSession";
 import { BoardRenderer } from "./boardRenderer";
 
 interface BoardCanvas {
@@ -66,7 +65,7 @@ export function useBoardCanvas(session: GameSession): BoardCanvas {
 			const dt = Math.min((now - last) / 1000, MAX_FRAME_DT);
 			last = now;
 			session.tick();
-			renderer.draw(c, cellSizeRef.current, session.state, session.grabbed, dt);
+			renderer.draw(c, cellSizeRef.current, session.state, session.grabbed, session.lean, dt);
 			frame = requestAnimationFrame(loop);
 		};
 		frame = requestAnimationFrame(loop);
@@ -79,26 +78,31 @@ export function useBoardCanvas(session: GameSession): BoardCanvas {
 		};
 	}, [session]);
 
-	const toCell = (event: ReactPointerEvent<HTMLCanvasElement>): Cell => {
-		const rect = event.currentTarget.getBoundingClientRect();
+	/** Pointer position in board cell units (fractional), so drags track the finger continuously. */
+	const toPoint = (canvas: HTMLCanvasElement, clientX: number, clientY: number): Point => {
+		const rect = canvas.getBoundingClientRect();
 		const size = cellSizeRef.current || 1;
-		const { w, h } = session.rules.level.grid;
-		const x = Math.floor((event.clientX - rect.left) / size);
-		const y = Math.floor((event.clientY - rect.top) / size);
-		return [Math.min(Math.max(x, 0), w - 1), Math.min(Math.max(y, 0), h - 1)];
+		return { x: (clientX - rect.left) / size, y: (clientY - rect.top) / size };
 	};
 
 	return {
 		containerRef,
 		canvasRef,
 		onPointerDown(event) {
-			if (session.grab(toCell(event))) {
+			if (session.grabAt(toPoint(event.currentTarget, event.clientX, event.clientY))) {
 				event.currentTarget.setPointerCapture(event.pointerId);
 			}
 		},
 		onPointerMove(event) {
-			if (session.grabbed) {
-				session.dragTo(toCell(event));
+			if (!session.grabbed) {
+				return;
+			}
+			// Browsers batch fast finger movement into one event; replaying every sample keeps the
+			// gecko on the path the finger actually drew instead of cutting corners.
+			const samples = event.nativeEvent.getCoalescedEvents?.() ?? [];
+			const points = samples.length > 0 ? samples : [event.nativeEvent];
+			for (const sample of points) {
+				session.dragToPoint(toPoint(event.currentTarget, sample.clientX, sample.clientY));
 			}
 		},
 		onPointerUp() {

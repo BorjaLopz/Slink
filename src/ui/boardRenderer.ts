@@ -33,6 +33,7 @@ const SLIDE_CATCHUP = 18;
 const SWALLOW_SPEED = 16;
 const FADE_SPEED = 7;
 const BUMP_DECAY = 6;
+const LEAN_EASE = 22;
 const HOLE_CLOSE_DELAY = -0.35;
 const HOLE_CLOSE_SPEED = 3;
 
@@ -60,6 +61,7 @@ export class BoardRenderer {
 	/** Full holes close up and vanish: progress 0 → 1, starting negative to wait for the swallow. */
 	private holeClose = new Map<string, number>();
 	private time = 0;
+	private lean: Point = { x: 0, y: 0 };
 
 	constructor(private readonly rules: Rules) {}
 
@@ -129,8 +131,12 @@ export class BoardRenderer {
 		anim.target = 0;
 	}
 
-	draw(c: CanvasRenderingContext2D, cellSize: number, state: GameState, grabbed: Grab | undefined, dt: number): void {
+	draw(c: CanvasRenderingContext2D, cellSize: number, state: GameState, grabbed: Grab | undefined, lean: Point | undefined, dt: number): void {
 		this.time += dt;
+		// Ease the displayed lean so the end glides after the finger instead of twitching with it.
+		const targetLean = grabbed && lean ? lean : { x: 0, y: 0 };
+		const k = Math.min(1, dt * LEAN_EASE);
+		this.lean = { x: this.lean.x + (targetLean.x - this.lean.x) * k, y: this.lean.y + (targetLean.y - this.lean.y) * k };
 		const { level } = this.rules;
 		const width = level.grid.w * cellSize;
 		const height = level.grid.h * cellSize;
@@ -166,7 +172,8 @@ export class BoardRenderer {
 			if (anim) {
 				this.advance(anim, dt);
 				const grabbedEnd = grabbed?.geckoId === gecko.id ? grabbed.end : undefined;
-				this.drawGecko(c, cellSize, gecko, anim, grabbedEnd);
+				const shift = grabbedEnd ? { x: this.lean.x * cellSize, y: this.lean.y * cellSize } : undefined;
+				this.drawGecko(c, cellSize, gecko, anim, grabbedEnd, shift);
 			}
 		}
 	}
@@ -219,7 +226,14 @@ export class BoardRenderer {
 		return points;
 	}
 
-	private drawGecko(c: CanvasRenderingContext2D, cellSize: number, gecko: Gecko, anim: GeckoAnim, grabbedEnd: "head" | "tail" | undefined): void {
+	private drawGecko(
+		c: CanvasRenderingContext2D,
+		cellSize: number,
+		gecko: Gecko,
+		anim: GeckoAnim,
+		grabbedEnd: "head" | "tail" | undefined,
+		shift: Point | undefined,
+	): void {
 		if (anim.fade <= 0) {
 			return;
 		}
@@ -235,6 +249,10 @@ export class BoardRenderer {
 			}
 		}
 		const points = this.polyline(anim, t0, t1, cellSize);
+		if (grabbedEnd && shift && !anim.saved) {
+			const i = grabbedEnd === "head" ? 0 : points.length - 1;
+			points[i] = { x: points[i].x + shift.x, y: points[i].y + shift.y };
+		}
 		const width = cellSize * 0.56 * (anim.saved && anim.swallow >= n - 1 ? anim.fade : 1);
 		const shake = anim.bump > 0 ? Math.sin(this.time * 60) * anim.bump * cellSize * 0.06 : 0;
 
@@ -266,7 +284,7 @@ export class BoardRenderer {
 		}
 
 		if (!anim.saved) {
-			this.drawEyes(c, anim, width, cellSize);
+			this.drawEyes(c, anim, points[0], width, cellSize);
 		}
 		c.restore();
 	}
@@ -301,8 +319,7 @@ export class BoardRenderer {
 		c.stroke();
 	}
 
-	private drawEyes(c: CanvasRenderingContext2D, anim: GeckoAnim, width: number, cellSize: number): void {
-		const head = this.pointAt(anim, anim.a, cellSize);
+	private drawEyes(c: CanvasRenderingContext2D, anim: GeckoAnim, head: Point, width: number, cellSize: number): void {
 		const neck = this.pointAt(anim, anim.a + 0.5, cellSize);
 		const len = Math.hypot(head.x - neck.x, head.y - neck.y) || 1;
 		const dx = (head.x - neck.x) / len;

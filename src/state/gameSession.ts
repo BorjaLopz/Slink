@@ -1,4 +1,4 @@
-import { directionBetween, endCell, findPath, manhattan, sameCell, step, createInitialState, createRules } from "../engine";
+import { endCell, findPath, manhattan, moveCell, sameCell, step, createInitialState, createRules } from "../engine";
 import type { Cell, Direction, GameEvent, GameState, GeckoEnd, Level, Mechanic, Rules } from "../engine";
 
 export type SessionFeedback = GameEvent | { type: "bump"; geckoId: string; end: GeckoEnd } | { type: "reset" };
@@ -21,11 +21,20 @@ export interface SessionSnapshot {
 	finalTime?: number;
 }
 
+/** Board coordinates in cell units: (0, 0) is the top-left corner, (0.5, 0.5) the first cell center. */
+export interface Point {
+	x: number;
+	y: number;
+}
+
 interface Drag {
 	geckoId: string;
 	end: GeckoEnd;
 	/** States visited during this drag; [0] is the state at grab time. Lets the finger retrace its path. */
 	trail: GameState[];
+	/** Finger minus end center at grab time. */
+	offset: Point;
+	lastBumpAt: number;
 }
 
 export interface Grab {
@@ -33,9 +42,37 @@ export interface Grab {
 	end: GeckoEnd;
 }
 
+const ENDS: readonly GeckoEnd[] = ["head", "tail"];
+/** How far from an end center (in cells) a touch still grabs it. */
+const GRAB_RADIUS = 0.85;
+/** The finger must lead the end by half a cell before it steps. */
+const STEP_THRESHOLD = 0.5;
+/** Minor-axis lead needed to slide sideways when the main direction is blocked. */
+const SLIDE_THRESHOLD = 0.3;
+/** Leads at least this long (dropped pointer frames) fall back to pathfinding. */
+const JUMP_DISTANCE = 1.5;
+const MAX_STEPS_PER_MOVE = 24;
 // A far jump of the finger should not produce surprising detours.
 const MAX_DETOUR = 4;
 const PATH_SEARCH_BUDGET = 800;
+const LEAN_MAX = 0.3;
+const LEAN_BLOCKED = 0.06;
+const BUMP_COOLDOWN_MS = 180;
+
+function cellCenter(cell: Cell): Point {
+	return { x: cell[0] + 0.5, y: cell[1] + 0.5 };
+}
+
+function clamp(value: number, min: number, max: number): number {
+	return Math.min(Math.max(value, min), max);
+}
+
+/** Main and secondary directions of a vector, plus the size of the secondary component. */
+function axes(dx: number, dy: number): [Direction, Direction, number] {
+	const horizontal: Direction = dx >= 0 ? "right" : "left";
+	const vertical: Direction = dy >= 0 ? "down" : "up";
+	return Math.abs(dx) >= Math.abs(dy) ? [horizontal, vertical, Math.abs(dy)] : [vertical, horizontal, Math.abs(dx)];
+}
 
 export function starsFor(level: Level, secondsUsed: number): Stars {
 	const remaining = 1 - secondsUsed / level.timeLimit;
@@ -60,6 +97,7 @@ export class GameSession {
 	private elapsedBefore = 0;
 	private runningSince: number | undefined;
 	private started = false;
+	private leanVector: Point | undefined;
 	private snapshot: SessionSnapshot;
 	private readonly listeners = new Set<() => void>();
 	private readonly feedbackListeners = new Set<(event: SessionFeedback) => void>();
@@ -114,82 +152,177 @@ export class GameSession {
 		}
 	}
 
-	/** Starts a drag if `cell` holds one end of a free gecko. */
+	/** Cell-based wrappers (tests, and anything that thinks in whole cells). */
 	grab(cell: Cell): boolean {
+		return this.grabAt(cellCenter(cell));
+	}
+
+	dragTo(cell: Cell): void {
+		this.dragToPoint(cellCenter(cell));
+	}
+
+	/**
+	 * Grabs the gecko end closest to `point` (board coordinates in cell units), if within reach.
+	 * Fingers are imprecise, so touching the area around an end counts too.
+	 */
+	grabAt(point: Point): boolean {
 		if (this.outcome !== "playing" || this.paused) {
 			return false;
 		}
+		let best: { geckoId: string; end: GeckoEnd; center: Point; distance: number } | undefined;
 		for (const gecko of this.current.geckos) {
 			if (gecko.saved) {
 				continue;
 			}
-			const end: GeckoEnd | undefined = sameCell(gecko.cells[0], cell)
-				? "head"
-				: sameCell(gecko.cells[gecko.cells.length - 1], cell)
-					? "tail"
-					: undefined;
-			if (end) {
-				if (!this.started) {
-					this.started = true;
-					this.runningSince = this.now();
+			for (const end of ENDS) {
+				const center = cellCenter(endCell(gecko, end));
+				const distance = Math.hypot(point.x - center.x, point.y - center.y);
+				if (!best || distance < best.distance) {
+					best = { geckoId: gecko.id, end, center, distance };
 				}
-				this.drag = { geckoId: gecko.id, end, trail: [this.current] };
-				this.notify();
-				return true;
 			}
 		}
-		return false;
+		if (!best || best.distance > GRAB_RADIUS) {
+			return false;
+		}
+		if (!this.started) {
+			this.started = true;
+			this.runningSince = this.now();
+		}
+		this.drag = {
+			geckoId: best.geckoId,
+			end: best.end,
+			trail: [this.current],
+			// Grabbing off-center must not make the end jump: we track the finger's movement instead.
+			offset: { x: point.x - best.center.x, y: point.y - best.center.y },
+			lastBumpAt: -Infinity,
+		};
+		this.leanVector = undefined;
+		this.notify();
+		return true;
 	}
 
-	/** Follows the finger to `cell`: retraces, steps, or pathfinds there. */
-	dragTo(cell: Cell): void {
+	/**
+	 * Moves the grabbed end towards the finger one cell at a time while the finger leads it by at least
+	 * half a cell. Blocked on the main axis: tries the other one (slides along walls). Moving back onto
+	 * the previous position walks the drag back one step (§2.3 rule 5).
+	 */
+	dragToPoint(point: Point): void {
 		const drag = this.drag;
 		if (!drag) {
 			return;
 		}
-		const gecko = this.current.geckos.find((g) => g.id === drag.geckoId);
-		if (!gecko || gecko.saved) {
-			this.release();
-			return;
-		}
-		const at = endCell(gecko, drag.end);
-		if (sameCell(at, cell)) {
-			return;
-		}
-
-		// Dragging back over the path already walked undoes it (§2.3 rule 5).
-		for (let i = drag.trail.length - 2; i >= 0; i--) {
-			const past = drag.trail[i].geckos.find((g) => g.id === drag.geckoId);
-			if (past && sameCell(endCell(past, drag.end), cell)) {
-				drag.trail.length = i + 1;
-				this.setState(drag.trail[i]);
+		const target = { x: point.x - drag.offset.x, y: point.y - drag.offset.y };
+		for (let i = 0; i < MAX_STEPS_PER_MOVE; i++) {
+			const at = this.grabbedEndCell(drag);
+			if (!at) {
+				return;
+			}
+			const center = cellCenter(at);
+			const dx = target.x - center.x;
+			const dy = target.y - center.y;
+			const lead = Math.max(Math.abs(dx), Math.abs(dy));
+			if (lead < STEP_THRESHOLD) {
+				break;
+			}
+			const [primary, secondary, minor] = axes(dx, dy);
+			const options = minor >= SLIDE_THRESHOLD ? [primary, secondary] : [primary];
+			const moved = options.some((dir) => this.advance(drag, dir)) || (lead >= JUMP_DISTANCE && this.jump(drag, target));
+			if (!moved) {
+				this.bump(drag);
+				break;
+			}
+			if (!this.drag) {
+				// Dropped into its hole: release() already ran.
 				return;
 			}
 		}
+		this.updateLean(drag, target);
+	}
 
-		const adjacent = directionBetween(at, cell);
-		const dirs: Direction[] | undefined = adjacent
-			? [adjacent]
-			: findPath(this.rules, this.current, drag.geckoId, drag.end, cell, PATH_SEARCH_BUDGET);
+	/** Small visual pull of the grabbed end towards the finger, in cell units. Undefined when idle. */
+	get lean(): Point | undefined {
+		return this.leanVector;
+	}
+
+	private grabbedEndCell(drag: Drag): Cell | undefined {
+		const gecko = this.current.geckos.find((g) => g.id === drag.geckoId);
+		if (!gecko || gecko.saved) {
+			this.release();
+			return undefined;
+		}
+		return endCell(gecko, drag.end);
+	}
+
+	/** One step of the grabbed end in `dir`, or one step back if `dir` points at its previous cell. */
+	private advance(drag: Drag, dir: Direction): boolean {
+		if (this.isRetrace(drag, dir)) {
+			drag.trail.pop();
+			this.setState(drag.trail[drag.trail.length - 1]);
+			return true;
+		}
+		const result = step(this.rules, this.current, drag.geckoId, drag.end, dir);
+		if (!result.ok) {
+			return false;
+		}
+		drag.trail.push(result.state);
+		this.setState(result.state);
+		result.events.forEach((e) => this.emitFeedback(e));
+		if (result.state.geckos.find((g) => g.id === drag.geckoId)?.saved) {
+			this.release();
+		}
+		return true;
+	}
+
+	/** Only the immediately previous cell counts: circling back past older cells keeps moving forward. */
+	private isRetrace(drag: Drag, dir: Direction): boolean {
+		if (drag.trail.length < 2) {
+			return false;
+		}
+		const previous = drag.trail[drag.trail.length - 2].geckos.find((g) => g.id === drag.geckoId);
+		const at = this.grabbedEndCell(drag);
+		return previous !== undefined && at !== undefined && sameCell(endCell(previous, drag.end), moveCell(at, dir));
+	}
+
+	/** Fallback for a finger that leapt ahead (dropped frames): pathfind to the target cell. */
+	private jump(drag: Drag, target: Point): boolean {
+		const at = this.grabbedEndCell(drag);
+		const { w, h } = this.rules.level.grid;
+		const cell: Cell = [clamp(Math.floor(target.x), 0, w - 1), clamp(Math.floor(target.y), 0, h - 1)];
+		if (!at || sameCell(at, cell)) {
+			return false;
+		}
+		const dirs = findPath(this.rules, this.current, drag.geckoId, drag.end, cell, PATH_SEARCH_BUDGET);
 		if (!dirs || dirs.length > manhattan(at, cell) + MAX_DETOUR) {
+			return false;
+		}
+		return dirs.every((dir) => this.drag !== undefined && this.advance(drag, dir));
+	}
+
+	private bump(drag: Drag): void {
+		const now = this.now();
+		if (now - drag.lastBumpAt >= BUMP_COOLDOWN_MS) {
+			drag.lastBumpAt = now;
 			this.emitFeedback({ type: "bump", geckoId: drag.geckoId, end: drag.end });
+		}
+	}
+
+	private updateLean(drag: Drag, target: Point): void {
+		const at = this.grabbedEndCell(drag);
+		if (!at || !this.drag) {
+			this.leanVector = undefined;
 			return;
 		}
-
-		for (const dir of dirs) {
-			const result = step(this.rules, this.current, drag.geckoId, drag.end, dir);
-			if (!result.ok) {
-				this.emitFeedback({ type: "bump", geckoId: drag.geckoId, end: drag.end });
-				break;
-			}
-			drag.trail.push(result.state);
-			this.setState(result.state);
-			result.events.forEach((e) => this.emitFeedback(e));
-			if (result.state.geckos.find((g) => g.id === drag.geckoId)?.saved) {
-				this.release();
-				break;
-			}
-		}
+		const center = cellCenter(at);
+		const dx = target.x - center.x;
+		const dy = target.y - center.y;
+		const [primary] = axes(dx, dy);
+		const amount = Math.max(Math.abs(dx), Math.abs(dy));
+		const free = this.isRetrace(drag, primary) || step(this.rules, this.current, drag.geckoId, drag.end, primary).ok;
+		// Free direction: follow the finger a little. Blocked: barely budge, so the wall pushes back.
+		const pull = Math.min(amount, free ? LEAN_MAX : LEAN_BLOCKED);
+		const unit = moveCell([0, 0], primary);
+		this.leanVector = { x: unit[0] * pull, y: unit[1] * pull };
 	}
 
 	/** Ends the drag; a drag that changed anything becomes one undo step (§2.7). */
@@ -199,6 +332,7 @@ export class GameSession {
 		}
 		const before = this.drag.trail[0];
 		this.drag = undefined;
+		this.leanVector = undefined;
 		if (before !== this.current) {
 			this.history.push(before);
 		}
