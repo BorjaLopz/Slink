@@ -29,13 +29,16 @@ interface GeckoAnim {
 }
 
 /**
- * Slither feel: each step closes a fixed share of the remaining gap per second (fast start, soft
- * landing), with a small floor so it always finishes. A queue of several steps naturally catches up
- * faster because the gap is bigger.
+ * Slither feel: a single step closes a fixed share of the remaining gap per second (fast start, soft
+ * landing), with a small floor so it always finishes. When steps queue up (long, fast finger
+ * patterns) the speed ramps up with the backlog, and the visual never trails more than MAX_LAG cells,
+ * so the gecko stays glued to the finger instead of replaying the path late.
  */
 const SLIDE_RESPONSE = 11;
+const BACKLOG_BOOST = 2.5;
 const MIN_SLIDE_SPEED = 2.5;
-const MAX_SLIDE_SPEED = 20;
+const MAX_SLIDE_SPEED = 45;
+const MAX_LAG = 1.2;
 const SWALLOW_SPEED = 9;
 const FADE_SPEED = 5;
 const BUMP_DECAY = 6;
@@ -185,8 +188,12 @@ export class BoardRenderer {
 	}
 
 	private advance(anim: GeckoAnim, dt: number): void {
+		if (Math.abs(anim.target - anim.a) > MAX_LAG) {
+			anim.a = anim.target - Math.sign(anim.target - anim.a) * MAX_LAG;
+		}
 		const gap = anim.target - anim.a;
-		const speed = Math.min(MAX_SLIDE_SPEED, Math.max(MIN_SLIDE_SPEED, Math.abs(gap) * SLIDE_RESPONSE));
+		const backlog = Math.max(0, Math.abs(gap) - 1);
+		const speed = Math.min(MAX_SLIDE_SPEED, Math.max(MIN_SLIDE_SPEED, Math.abs(gap) * SLIDE_RESPONSE * (1 + backlog * BACKLOG_BOOST)));
 		anim.a = Math.abs(gap) <= speed * dt ? anim.target : anim.a + Math.sign(gap) * speed * dt;
 		anim.bump = Math.max(0, anim.bump - BUMP_DECAY * dt);
 
