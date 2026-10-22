@@ -52,8 +52,9 @@ const SLIDE_THRESHOLD = 0.3;
 /** Leads at least this long (dropped pointer frames) fall back to pathfinding. */
 const JUMP_DISTANCE = 1.5;
 const MAX_STEPS_PER_MOVE = 24;
-// A far jump of the finger should not produce surprising detours.
-const MAX_DETOUR = 4;
+// Jumps only recover dropped pointer frames along a straight-ish line: never a detour the finger did
+// not draw (on crowded boards that looked like the gecko teleporting around obstacles).
+const MAX_DETOUR = 0;
 const PATH_SEARCH_BUDGET = 800;
 const LEAN_MAX = 0.3;
 const LEAN_BLOCKED = 0.06;

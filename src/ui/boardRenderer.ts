@@ -28,12 +28,18 @@ interface GeckoAnim {
 	bump: number;
 }
 
-const MIN_SLIDE_SPEED = 14;
-const SLIDE_CATCHUP = 18;
-const SWALLOW_SPEED = 16;
-const FADE_SPEED = 7;
+/**
+ * Slither feel: each step closes a fixed share of the remaining gap per second (fast start, soft
+ * landing), with a small floor so it always finishes. A queue of several steps naturally catches up
+ * faster because the gap is bigger.
+ */
+const SLIDE_RESPONSE = 11;
+const MIN_SLIDE_SPEED = 2.5;
+const MAX_SLIDE_SPEED = 20;
+const SWALLOW_SPEED = 9;
+const FADE_SPEED = 5;
 const BUMP_DECAY = 6;
-const LEAN_EASE = 22;
+const LEAN_EASE = 14;
 const HOLE_CLOSE_DELAY = -0.35;
 const HOLE_CLOSE_SPEED = 3;
 
@@ -180,7 +186,7 @@ export class BoardRenderer {
 
 	private advance(anim: GeckoAnim, dt: number): void {
 		const gap = anim.target - anim.a;
-		const speed = Math.max(MIN_SLIDE_SPEED, Math.abs(gap) * SLIDE_CATCHUP);
+		const speed = Math.min(MAX_SLIDE_SPEED, Math.max(MIN_SLIDE_SPEED, Math.abs(gap) * SLIDE_RESPONSE));
 		anim.a = Math.abs(gap) <= speed * dt ? anim.target : anim.a + Math.sign(gap) * speed * dt;
 		anim.bump = Math.max(0, anim.bump - BUMP_DECAY * dt);
 
