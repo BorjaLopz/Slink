@@ -1,23 +1,58 @@
 import { moveCell, sameCell } from "./cell";
 import { cloneState, stateKey } from "./state";
-import type { Cell, Ctx, Direction, GameEvent, GameState, Gecko, GeckoEnd, Rules, StepResult } from "./types";
+import type { Cell, Ctx, Direction, GameEvent, GameState, Gecko, GeckoEnd, Hole, Level, Rules, StepResult } from "./types";
 
 const MAX_AFTER_MOVE_ITERATIONS = 50;
 const MAX_EVENT_DISPATCHES = 500;
 
+/**
+ * A class rather than an object of closures: step() builds two contexts per move and the solver runs
+ * millions of steps, so per-call closure allocation showed up at the top of generator profiles.
+ */
+class StepCtx implements Ctx {
+	readonly level: Level;
+
+	constructor(
+		rules: Rules,
+		readonly state: GameState,
+		private readonly events: GameEvent[],
+	) {
+		this.level = rules.level;
+	}
+
+	data<T>(id: string): T | undefined {
+		return this.level.mechanicData[id] as T | undefined;
+	}
+
+	emit(event: GameEvent): void {
+		this.events.push(event);
+	}
+
+	geckoAt(cell: Cell): Gecko | undefined {
+		for (const g of this.state.geckos) {
+			if (!g.saved && g.cells.some((c) => sameCell(c, cell))) {
+				return g;
+			}
+		}
+		return undefined;
+	}
+
+	holeAt(cell: Cell): Hole | undefined {
+		for (const h of this.state.holes) {
+			if (sameCell(h.cell, cell)) {
+				return h;
+			}
+		}
+		return undefined;
+	}
+
+	inBounds(cell: Cell): boolean {
+		return cell[0] >= 0 && cell[1] >= 0 && cell[0] < this.level.grid.w && cell[1] < this.level.grid.h;
+	}
+}
+
 export function createCtx(rules: Rules, state: GameState, events: GameEvent[]): Ctx {
-	const { level } = rules;
-	return {
-		level,
-		state,
-		data: <T>(id: string) => level.mechanicData[id] as T | undefined,
-		emit: (event) => {
-			events.push(event);
-		},
-		geckoAt: (cell) => state.geckos.find((g) => !g.saved && g.cells.some((c) => sameCell(c, cell))),
-		holeAt: (cell) => state.holes.find((h) => sameCell(h.cell, cell)),
-		inBounds: (cell) => cell[0] >= 0 && cell[1] >= 0 && cell[0] < level.grid.w && cell[1] < level.grid.h,
-	};
+	return new StepCtx(rules, state, events);
 }
 
 /** Base rules for entering a cell (§2.3 and §2.4). `ordered` has the grabbed end first. */

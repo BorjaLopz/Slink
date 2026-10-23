@@ -44,14 +44,14 @@ export function createInitialState(rules: Rules): GameState {
 
 /**
  * Hand-rolled deep copy: much cheaper than structuredClone for the hot path (solver/pathfinding
- * clone thousands of states). Mechanic state is the only part with unknown shape.
+ * clone thousands of states). Mechanic state values are immutable by contract, so a shallow copy
+ * of the record is enough.
  */
 export function cloneState(state: GameState): GameState {
-	const hasMechState = Object.keys(state.mechState).length > 0;
 	return {
 		geckos: state.geckos.map((g) => ({ ...g, cells: g.cells.map((c) => [c[0], c[1]]) })),
 		holes: state.holes.map((h) => ({ ...h, cell: [h.cell[0], h.cell[1]] })),
-		mechState: hasMechState ? structuredClone(state.mechState) : {},
+		mechState: { ...state.mechState },
 		steps: state.steps,
 		status: state.status,
 	};

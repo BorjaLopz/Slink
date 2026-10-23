@@ -26,6 +26,8 @@ interface GeckoAnim {
 	/** 1 → 0 once fully swallowed. */
 	fade: number;
 	bump: number;
+	/** 0 → 1 while held: the gecko rises off the board (sheet: "Arrastrando"). */
+	lift: number;
 }
 
 /**
@@ -45,6 +47,17 @@ const BUMP_DECAY = 6;
 const LEAN_EASE = 14;
 const HOLE_CLOSE_DELAY = -0.35;
 const HOLE_CLOSE_SPEED = 3;
+const LIFT_SPEED = 12;
+/** Sheet sizes, in cells: body width, hard rest shadow, lifted shadow and how far a held gecko rises. */
+const BODY_WIDTH = 0.6;
+const REST_SHADOW = 0.07;
+const LIFT_SHADOW = 0.24;
+const LIFT_BLUR = 0.16;
+const LIFT_RISE = 0.08;
+/** The tail sticks out half a cell past the last segment; it does not occupy or block that cell. */
+const TAIL_LENGTH = 0.45;
+/** Slow breathing halo that makes open holes the brightest thing on the board after the geckos. */
+const HOLE_GLOW_SPEED = 2.2;
 
 function cellsEqual(a: Cell[], b: Cell[]): boolean {
 	return a.length === b.length && a.every((c, i) => sameCell(c, b[i]));
@@ -61,6 +74,7 @@ function snapAnim(gecko: Gecko): GeckoAnim {
 		swallow: gecko.saved ? gecko.cells.length : 0,
 		fade: gecko.saved ? 0 : 1,
 		bump: 0,
+		lift: 0,
 	};
 }
 
@@ -154,40 +168,35 @@ export class BoardRenderer {
 			cellSize,
 			toPx: (cell) => ({ x: cell[0] * cellSize, y: cell[1] * cellSize }),
 			theme: BOARD_THEME,
+			game: state,
+			drawRock: (cell) => drawRock(c, cell, cellSize),
 		};
 
 		c.clearRect(0, 0, width, height);
-		c.fillStyle = BOARD_THEME.board;
-		c.beginPath();
-		c.roundRect(0, 0, width, height, 8);
-		c.fill();
-		c.fillStyle = BOARD_THEME.cellDot;
-		for (let y = 0; y < level.grid.h; y++) {
-			for (let x = 0; x < level.grid.w; x++) {
-				c.beginPath();
-				c.arc((x + 0.5) * cellSize, (y + 0.5) * cellSize, cellSize * 0.05, 0, Math.PI * 2);
-				c.fill();
-			}
-		}
+		drawBoard(c, level.grid.w, level.grid.h, cellSize);
 
+		this.drawHoles(c, cellSize, state, dt);
+
+		// After the holes: mechanics may decorate them (locks). Nothing else overlaps a hole.
 		for (const mechanic of this.rules.mechanics) {
 			mechanic.render?.(renderer, level, level.mechanicData[mechanic.id], state.mechState[mechanic.id]);
 		}
 
-		this.drawHoles(c, cellSize, state, dt);
-
-		for (const gecko of state.geckos) {
+		// The held gecko is drawn last so it floats over everything else.
+		const ordered = [...state.geckos].sort((a, b) => Number(a.id === grabbed?.geckoId) - Number(b.id === grabbed?.geckoId));
+		for (const gecko of ordered) {
 			const anim = this.anims.get(gecko.id);
 			if (anim) {
-				this.advance(anim, dt);
 				const grabbedEnd = grabbed?.geckoId === gecko.id ? grabbed.end : undefined;
+				this.advance(anim, dt, grabbedEnd !== undefined);
 				const shift = grabbedEnd ? { x: this.lean.x * cellSize, y: this.lean.y * cellSize } : undefined;
 				this.drawGecko(c, cellSize, gecko, anim, grabbedEnd, shift);
 			}
 		}
 	}
 
-	private advance(anim: GeckoAnim, dt: number): void {
+	private advance(anim: GeckoAnim, dt: number, held: boolean): void {
+		anim.lift = held ? Math.min(1, anim.lift + LIFT_SPEED * dt) : Math.max(0, anim.lift - LIFT_SPEED * dt);
 		if (Math.abs(anim.target - anim.a) > MAX_LAG) {
 			anim.a = anim.target - Math.sign(anim.target - anim.a) * MAX_LAG;
 		}
@@ -266,32 +275,46 @@ export class BoardRenderer {
 			const i = grabbedEnd === "head" ? 0 : points.length - 1;
 			points[i] = { x: points[i].x + shift.x, y: points[i].y + shift.y };
 		}
-		const width = cellSize * 0.56 * (anim.saved && anim.swallow >= n - 1 ? anim.fade : 1);
+		const width = cellSize * BODY_WIDTH * (anim.saved && anim.swallow >= n - 1 ? anim.fade : 1);
 		const shake = anim.bump > 0 ? Math.sin(this.time * 60) * anim.bump * cellSize * 0.06 : 0;
+		const lift = anim.lift;
+		const tail = anim.saved ? undefined : this.tailPoint(anim, t1, points[points.length - 1], cellSize);
+		const outline = Math.max(2, cellSize * 0.045);
 
 		c.save();
-		c.translate(shake, 0);
+		c.translate(shake, -LIFT_RISE * cellSize * lift);
 		c.lineCap = "round";
 		c.lineJoin = "round";
 
-		if (!anim.saved && n >= 3) {
-			this.drawLegs(c, anim, t0 + 0.7, width, palette.outline, cellSize);
-			this.drawLegs(c, anim, t1 - 0.7, width, palette.outline, cellSize);
+		// Shadow: hard and short at rest (a toy on paper), long and soft while held.
+		c.save();
+		c.translate(0, cellSize * (REST_SHADOW + (LIFT_SHADOW - REST_SHADOW) * lift + LIFT_RISE * lift));
+		if (lift > 0) {
+			c.filter = `blur(${(cellSize * LIFT_BLUR * lift).toFixed(1)}px)`;
 		}
+		const shadow = lift > 0 ? BOARD_THEME.shadowLifted : BOARD_THEME.shadow;
+		this.drawSilhouette(c, points, tail, width + outline, shadow, cellSize);
+		c.restore();
 
-		this.strokePath(c, points, width + Math.max(3, cellSize * 0.06), palette.outline);
-		this.strokePath(c, points, width, palette.body);
-		c.globalAlpha = 0.55;
-		this.strokePath(c, points, width * 0.2, palette.spine);
+		if (!anim.saved) {
+			const front = n >= 3 ? 0.7 : 0.3;
+			this.drawLegs(c, anim, t0 + front, width, palette.outline, cellSize);
+			this.drawLegs(c, anim, t1 - front, width, palette.outline, cellSize);
+		}
+		this.drawSilhouette(c, points, tail, width + outline, palette.outline, cellSize);
+		this.drawSilhouette(c, points, tail, width, palette.body, cellSize);
+		// Highlight stripe along the back, as in the sheet's "Anatomía".
+		c.globalAlpha = 0.75;
+		this.strokePath(c, points, width * 0.18, palette.spine);
 		c.globalAlpha = 1;
 
 		if (grabbedEnd) {
 			const p = grabbedEnd === "head" ? points[0] : points[points.length - 1];
 			c.strokeStyle = BOARD_THEME.grabRing;
-			c.globalAlpha = 0.35;
+			c.globalAlpha = 0.5 * lift;
 			c.lineWidth = 2;
 			c.beginPath();
-			c.arc(p.x, p.y, width * 0.75, 0, Math.PI * 2);
+			c.arc(p.x, p.y, width * 0.85, 0, Math.PI * 2);
 			c.stroke();
 			c.globalAlpha = 1;
 		}
@@ -300,6 +323,29 @@ export class BoardRenderer {
 			this.drawEyes(c, anim, points[0], width, cellSize);
 		}
 		c.restore();
+	}
+
+	/** Point half a cell past the last segment, continuing its direction: where the tail tip goes. */
+	private tailPoint(anim: GeckoAnim, t1: number, end: Point, cellSize: number): Point {
+		const before = this.pointAt(anim, t1 - 0.5, cellSize);
+		const len = Math.hypot(end.x - before.x, end.y - before.y) || 1;
+		return {
+			x: end.x + ((end.x - before.x) / len) * cellSize * TAIL_LENGTH,
+			y: end.y + ((end.y - before.y) / len) * cellSize * TAIL_LENGTH,
+		};
+	}
+
+	/** Body + head bulb + thin tail in one color (used for the shadow, outline and fill passes). */
+	private drawSilhouette(c: CanvasRenderingContext2D, points: Point[], tail: Point | undefined, width: number, color: string, cellSize: number): void {
+		this.strokePath(c, points, width, color);
+		if (tail) {
+			this.strokePath(c, [points[points.length - 1], tail], width * 0.42, color);
+		}
+		// The head is a touch wider than the body.
+		c.fillStyle = color;
+		c.beginPath();
+		c.arc(points[0].x, points[0].y, width * 0.56 + cellSize * 0.01, 0, Math.PI * 2);
+		c.fill();
 	}
 
 	private strokePath(c: CanvasRenderingContext2D, points: Point[], width: number, color: string): void {
@@ -323,9 +369,9 @@ export class BoardRenderer {
 		const len = Math.hypot(q.x - p.x, q.y - p.y) || 1;
 		const px = -(q.y - p.y) / len;
 		const py = (q.x - p.x) / len;
-		const reach = width * 0.78;
+		const reach = width * 0.82;
 		c.strokeStyle = color;
-		c.lineWidth = width * 0.26;
+		c.lineWidth = width * 0.22;
 		c.beginPath();
 		c.moveTo(p.x - px * reach, p.y - py * reach);
 		c.lineTo(p.x + px * reach, p.y + py * reach);
@@ -339,15 +385,15 @@ export class BoardRenderer {
 		const dy = (head.y - neck.y) / len;
 		const r = width / 2;
 		for (const side of [-1, 1]) {
-			const ex = head.x + dx * r * 0.2 - dy * r * 0.5 * side;
-			const ey = head.y + dy * r * 0.2 + dx * r * 0.5 * side;
+			const ex = head.x + dx * r * 0.35 - dy * r * 0.48 * side;
+			const ey = head.y + dy * r * 0.35 + dx * r * 0.48 * side;
 			c.fillStyle = BOARD_THEME.eyeWhite;
 			c.beginPath();
-			c.arc(ex, ey, r * 0.3, 0, Math.PI * 2);
+			c.arc(ex, ey, r * 0.32, 0, Math.PI * 2);
 			c.fill();
 			c.fillStyle = BOARD_THEME.eyePupil;
 			c.beginPath();
-			c.arc(ex + dx * r * 0.1, ey + dy * r * 0.1, r * 0.15, 0, Math.PI * 2);
+			c.arc(ex + dx * r * 0.1, ey + dy * r * 0.1, r * 0.17, 0, Math.PI * 2);
 			c.fill();
 		}
 	}
@@ -373,17 +419,107 @@ export class BoardRenderer {
 				}
 				closing = Math.max(0, progress);
 			}
-			const radius = cellSize * 0.36 * (1 + pulse * 0.25) * (1 - closing * closing * closing);
+			const scale = (1 + pulse * 0.25) * (1 - closing * closing * closing);
+			const radius = cellSize * 0.4 * scale;
+			const ring = cellSize * 0.09 * scale;
+			const glow = full ? 0 : 0.5 + 0.5 * Math.sin(this.time * HOLE_GLOW_SPEED + hole.cell[0] + hole.cell[1]);
+			const fade = 1 - closing;
 
-			c.fillStyle = BOARD_THEME.holeInner;
+			// Halo: open holes breathe softly in their color so they read from across the board.
+			c.fillStyle = palette.body;
+			c.globalAlpha = (0.1 + 0.12 * glow + 0.4 * pulse) * fade;
+			c.beginPath();
+			c.arc(cx, cy, radius + ring * (0.9 + 0.5 * glow), 0, Math.PI * 2);
+			c.fill();
+
+			c.globalAlpha = fade;
+			c.fillStyle = BOARD_THEME.pit;
 			c.beginPath();
 			c.arc(cx, cy, radius, 0, Math.PI * 2);
 			c.fill();
+			// Inner black ring (sheet: "anillo interior negro 55 %") and a tinted floor dot for depth.
+			c.strokeStyle = "rgba(0, 0, 0, 0.55)";
+			c.lineWidth = ring;
+			c.beginPath();
+			c.arc(cx, cy, radius - ring * 1.4, 0, Math.PI * 2);
+			c.stroke();
+			c.fillStyle = palette.outline;
+			c.globalAlpha = 0.45 * fade;
+			c.beginPath();
+			c.arc(cx, cy, radius * 0.32, 0, Math.PI * 2);
+			c.fill();
+			c.globalAlpha = fade;
 			c.strokeStyle = palette.body;
-			c.globalAlpha = 1 - closing;
-			c.lineWidth = Math.max(2, cellSize * 0.07);
+			c.lineWidth = ring;
+			c.beginPath();
+			c.arc(cx, cy, radius - ring / 2, 0, Math.PI * 2);
 			c.stroke();
 			c.globalAlpha = 1;
 		}
 	}
+}
+
+/**
+ * Sunken blueprint board: flat fill, fine grid lines and an inset shadow along the top edge
+ * (sheet: "inset 0 3px 14px rgb(0 0 0/.55)").
+ */
+function drawBoard(c: CanvasRenderingContext2D, w: number, h: number, cellSize: number): void {
+	const width = w * cellSize;
+	const height = h * cellSize;
+	c.fillStyle = BOARD_THEME.board;
+	c.fillRect(0, 0, width, height);
+
+	c.strokeStyle = BOARD_THEME.grid;
+	c.lineWidth = 1;
+	c.beginPath();
+	for (let x = 1; x < w; x++) {
+		c.moveTo(Math.round(x * cellSize) + 0.5, 0);
+		c.lineTo(Math.round(x * cellSize) + 0.5, height);
+	}
+	for (let y = 1; y < h; y++) {
+		c.moveTo(0, Math.round(y * cellSize) + 0.5);
+		c.lineTo(width, Math.round(y * cellSize) + 0.5);
+	}
+	c.stroke();
+
+	c.save();
+	c.beginPath();
+	c.rect(0, 0, width, height);
+	c.clip();
+	c.shadowColor = "rgba(0, 0, 0, 0.55)";
+	c.shadowBlur = 14;
+	c.shadowOffsetY = 3;
+	c.strokeStyle = BOARD_THEME.board;
+	c.lineWidth = 20;
+	c.strokeRect(-10, -10, width + 20, height + 20);
+	c.restore();
+}
+
+/** Rock: hatched block with a hard short shadow, the only diagonal pattern on the board. */
+function drawRock(c: CanvasRenderingContext2D, cell: Cell, cellSize: number): void {
+	const inset = cellSize * 0.06;
+	const size = cellSize - inset * 2;
+	const x = cell[0] * cellSize + inset;
+	const y = cell[1] * cellSize + inset;
+	c.save();
+	c.fillStyle = "rgba(0, 0, 0, 0.4)";
+	c.fillRect(x, y + 3, size, size);
+	c.fillStyle = BOARD_THEME.rock;
+	c.fillRect(x, y, size, size);
+	c.beginPath();
+	c.rect(x, y, size, size);
+	c.clip();
+	c.strokeStyle = BOARD_THEME.rockHatch;
+	c.lineWidth = Math.max(1.5, cellSize * 0.04);
+	const gap = cellSize * 0.16;
+	c.beginPath();
+	for (let d = -size; d < size * 2; d += gap) {
+		c.moveTo(x + d, y);
+		c.lineTo(x + d + size, y + size);
+	}
+	c.stroke();
+	c.restore();
+	c.strokeStyle = BOARD_THEME.rockEdge;
+	c.lineWidth = 1;
+	c.strokeRect(x + 0.5, y + 0.5, size - 1, size - 1);
 }

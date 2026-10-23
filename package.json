@@ -12,7 +12,9 @@
 		"lint": "eslint .",
 		"typecheck": "tsc --noEmit",
 		"gen:levels": "tsx scripts/gen-levels.ts",
-		"validate:levels": "tsx scripts/validate-levels.ts"
+		"validate:levels": "tsx scripts/validate-levels.ts",
+		"levels:freeze": "tsx scripts/freeze-levels.ts",
+		"mechanic:release": "tsx scripts/release-mechanic.ts"
 	},
 	"dependencies": {
 		"react": "^19.3.1",

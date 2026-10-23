@@ -1,34 +1,44 @@
-import { useEffect, useMemo, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import type { Level } from "../engine";
 import { REGISTRY } from "../mechanics";
 import { GameSession } from "../state/gameSession";
 import { recordWin } from "../state/progress";
 import { Board } from "./Board";
+import { Clock } from "./Clock";
 import { EndPanel } from "./EndPanel";
-import { StarRow } from "./StarRow";
-import { TierLabel } from "./TierLabel";
+import { GeckoCounter } from "./GeckoCounter";
+import { BackIcon, PauseIcon, RestartIcon, UndoIcon } from "./icons";
+import { levelNumber, levelTitle } from "./levelText";
+import { VictoryPanel } from "./VictoryPanel";
 import { formatClock, useCountdown } from "./useCountdown";
 
 interface GameScreenProps {
 	level: Level;
 	hasNext: boolean;
 	onNext(): void;
-	onMenu(): void;
+	onLevels(): void;
 }
 
-const LOW_TIME_SECONDS = 10;
+interface WinRecord {
+	/** finalTime of the win this record belongs to, so a replay never shows a stale panel. */
+	time: number;
+	previousBest: number | undefined;
+}
 
-export function GameScreen({ level, hasNext, onNext, onMenu }: GameScreenProps) {
+export function GameScreen({ level, hasNext, onNext, onLevels }: GameScreenProps) {
 	const session = useMemo(() => new GameSession(level, REGISTRY), [level]);
 	const snapshot = useSyncExternalStore(session.subscribe, session.getSnapshot);
 	const timeLeft = useCountdown(session);
+	const [win, setWin] = useState<WinRecord>();
 	const { state, outcome, paused, started, canUndo, stars, finalTime } = snapshot;
-	const saved = state.geckos.filter((g) => g.saved).length;
-	const missing = state.geckos.length - saved;
+	const missing = state.geckos.filter((g) => !g.saved).length;
 
 	useEffect(() => {
 		if (outcome === "won" && stars !== undefined && finalTime !== undefined) {
-			recordWin(level.id, stars, finalTime);
+			const previousBest = recordWin(level.id, stars, finalTime);
+			// Progress is an external store; the old record only exists at the moment of saving.
+			// eslint-disable-next-line react-hooks/set-state-in-effect
+			setWin({ time: finalTime, previousBest });
 		}
 	}, [outcome, stars, finalTime, level.id]);
 
@@ -44,100 +54,87 @@ export function GameScreen({ level, hasNext, onNext, onMenu }: GameScreenProps) 
 	}, [session]);
 
 	const clock = started ? timeLeft : level.timeLimit;
+	const playing = outcome === "playing";
 
 	return (
-		<main className="screen screen-enter">
-			<header className="hud">
-				<button className="icon-button" onClick={onMenu} aria-label="Volver al menú">
-					‹
+		<main className="screen screen-enter game">
+			<header className="topbar">
+				<button className="icon-btn" onClick={onLevels} aria-label="Volver a niveles">
+					<BackIcon />
 				</button>
-				<div className="hud-title">
-					<span className="hud-level">Nivel {level.id}</span>
-					<TierLabel tier={level.meta?.tier} />
+				<div className="game-title">
+					<span className="label">Nivel {levelNumber(level.id)}</span>
+					<span className="game-name">{levelTitle(level)}</span>
 				</div>
-				<span className={`clock ${started && clock <= LOW_TIME_SECONDS ? "clock-low" : ""}`}>{formatClock(clock)}</span>
+				<Clock seconds={clock} running={started && playing} />
 			</header>
 
-			<p className="hint">{level.hint ?? (started ? " " : "El reloj empieza al tocar un lagarto.")}</p>
+			<p className="hint">{level.hint ?? (started ? " " : "El reloj empieza al tocar un gecko.")}</p>
 
-			<Board key={level.id} session={session} />
+			<div className="board-area">
+				<Board key={level.id} session={session} />
+			</div>
 
-			<footer className="controls">
-				<span className="counter">
-					{saved}/{state.geckos.length}
-				</span>
-				<div className="control-group">
-					<button className="ghost-button" onClick={() => session.undo()} disabled={!canUndo || outcome !== "playing"}>
-						Deshacer
+			<footer className="game-footer">
+				<GeckoCounter geckos={state.geckos} />
+				<div className="tool-row">
+					<button className="icon-btn" onClick={() => session.undo()} disabled={!canUndo || !playing} aria-label="Deshacer">
+						<UndoIcon />
 					</button>
-					<button className="ghost-button" onClick={() => session.restart()}>
-						Reiniciar
+					<button className="icon-btn" onClick={() => session.restart()} aria-label="Reiniciar">
+						<RestartIcon />
 					</button>
-					<button className="ghost-button" onClick={() => session.pause()} disabled={!started || outcome !== "playing"}>
-						Pausa
+					<button className="icon-btn" onClick={() => session.pause()} disabled={!started || !playing} aria-label="Pausa">
+						<PauseIcon />
 					</button>
 				</div>
 			</footer>
 
-			{outcome === "won" && (
-				<EndPanel
-					title={`Nivel ${level.id} completado`}
-					actions={
-						<>
-							<button className="ghost-button" onClick={() => session.restart()}>
-								Repetir
-							</button>
-							{hasNext ? (
-								<button className="pill-button" onClick={onNext}>
-									Siguiente
-								</button>
-							) : (
-								<button className="pill-button" onClick={onMenu}>
-									Menú
-								</button>
-							)}
-						</>
-					}
-				>
-					<StarRow earned={stars ?? 1} size="large" reveal />
-					<p>{formatClock(finalTime ?? 0)} de {formatClock(level.timeLimit)}</p>
-				</EndPanel>
+			{outcome === "won" && stars !== undefined && finalTime !== undefined && (
+				<VictoryPanel
+					time={finalTime}
+					limit={level.timeLimit}
+					stars={stars}
+					previousBest={win?.time === finalTime ? win.previousBest : undefined}
+					hasNext={hasNext}
+					onNext={onNext}
+					onRetry={() => session.restart()}
+					onLevels={onLevels}
+				/>
 			)}
 
 			{outcome === "lost" && (
 				<EndPanel
-					title="Se acabó el tiempo"
+					label="Tiempo agotado"
+					title={missing === 1 ? "¡Casi! Faltaba 1 gecko" : `Faltaban ${missing} geckos`}
 					actions={
 						<>
-							<button className="ghost-button" onClick={onMenu}>
-								Menú
-							</button>
-							<button className="pill-button" onClick={() => session.restart()}>
+							<button className="btn btn-primary" onClick={() => session.restart()}>
 								Reintentar
+							</button>
+							<button className="btn" onClick={onLevels}>
+								Niveles
 							</button>
 						</>
 					}
-				>
-					<p>{missing === 1 ? "¡Casi! Faltaba 1 lagarto." : `Faltaban ${missing} lagartos.`}</p>
-				</EndPanel>
+				/>
 			)}
 
 			{paused && (
 				<EndPanel
-					title="Pausa"
+					label="Pausa"
+					title={`${formatClock(timeLeft)} restantes`}
 					actions={
 						<>
-							<button className="ghost-button" onClick={onMenu}>
-								Menú
-							</button>
-							<button className="pill-button" onClick={() => session.resume()}>
+							<button className="btn btn-primary" onClick={() => session.resume()}>
 								Continuar
+							</button>
+							<button className="btn" onClick={onLevels}>
+								Niveles
 							</button>
 						</>
 					}
-				>
-					<p>{formatClock(timeLeft)} restantes</p>
-				</EndPanel>
+				/>
 			)}
 		</main>
 	);

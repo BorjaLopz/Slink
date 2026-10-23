@@ -6,21 +6,27 @@ import { REGISTRY } from "../src/mechanics";
 import { minParkings } from "../src/solver/parking";
 import { readCatalog, writeCatalog } from "./catalog";
 
-// npm run gen:levels -- --from 7 --count 44 [--force]
+// npm run gen:levels -- [--from 7] --count 44 [--force] [--unfreeze]
+// --from defaults to the first level that does not exist yet, so `-- --count 10` appends a pack.
 function arg(name: string): string | undefined {
 	const i = process.argv.indexOf(`--${name}`);
 	return i >= 0 ? process.argv[i + 1] : undefined;
 }
 
-const from = Number(arg("from"));
+const { manifest, levels } = readCatalog();
+const from = Number(arg("from") ?? levels.length + 1);
 const count = Number(arg("count") ?? 10);
 const force = process.argv.includes("--force");
+const unfreeze = process.argv.includes("--unfreeze");
 if (!Number.isInteger(from) || from < 1 || !Number.isInteger(count) || count < 1) {
-	console.error("usage: npm run gen:levels -- --from <id> --count <n> [--force]");
+	console.error("usage: npm run gen:levels -- [--from <id>] --count <n> [--force] [--unfreeze]");
 	process.exit(1);
 }
-
-const { manifest, levels } = readCatalog();
+if (force && from <= manifest.frozenThrough && !unfreeze) {
+	// Published levels must not change under the player's saved progress (GAME_DESIGN.md §4.1.b).
+	console.error(`levels 1-${manifest.frozenThrough} are published and frozen; regenerating them needs --unfreeze`);
+	process.exit(1);
+}
 const byId = new Map(levels.map((l) => [l.id, l]));
 let generated = 0;
 
@@ -37,7 +43,15 @@ for (let id = from; id < from + count; id++) {
 		continue;
 	}
 	const started = performance.now();
-	const level = generateLevel(id, { registry: REGISTRY, unlocks: manifest.mechanicsUnlock });
+	let level: Level;
+	try {
+		level = generateLevel(id, { registry: REGISTRY, timeline: manifest.timeline });
+	} catch (error) {
+		// Keep what was generated so far: hard levels take minutes and the ids before this one are fine.
+		console.error(`#${id} failed: ${(error as Error).message}`);
+		process.exitCode = 1;
+		break;
+	}
 	const errors = validateLevel(level, REGISTRY);
 	if (errors.length > 0) {
 		throw new Error(errors.join("\n"));

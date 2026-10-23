@@ -1,0 +1,1229 @@
+{
+	"levels": [
+		{
+			"id": 51,
+			"seed": 4237976710,
+			"generatorVersion": 2,
+			"source": "generated",
+			"grid": {
+				"w": 7,
+				"h": 9
+			},
+			"holes": [
+				{
+					"color": "green",
+					"cell": [5, 5]
+				},
+				{
+					"color": "blue",
+					"cell": [2, 7]
+				},
+				{
+					"color": "red",
+					"cell": [2, 1]
+				},
+				{
+					"color": "yellow",
+					"cell": [1, 2]
+				},
+				{
+					"color": "purple",
+					"cell": [6, 1]
+				},
+				{
+					"color": "orange",
+					"cell": [3, 0]
+				},
+				{
+					"color": "cyan",
+					"cell": [2, 8]
+				},
+				{
+					"color": "pink",
+					"cell": [4, 7]
+				}
+			],
+			"geckos": [
+				{
+					"id": "g1",
+					"color": "green",
+					"cells": [[6, 5], [6, 6], [6, 7]]
+				},
+				{
+					"id": "g2",
+					"color": "blue",
+					"cells": [[1, 8], [1, 7], [0, 7]]
+				},
+				{
+					"id": "g3",
+					"color": "red",
+					"cells": [[0, 0], [0, 1]]
+				},
+				{
+					"id": "g4",
+					"color": "yellow",
+					"cells": [[3, 3], [2, 3], [2, 4]]
+				},
+				{
+					"id": "g5",
+					"color": "purple",
+					"cells": [[6, 0], [5, 0]]
+				},
+				{
+					"id": "g6",
+					"color": "orange",
+					"cells": [[1, 3], [0, 3]]
+				},
+				{
+					"id": "g7",
+					"color": "cyan",
+					"cells": [[4, 8], [5, 8], [6, 8]]
+				},
+				{
+					"id": "g8",
+					"color": "pink",
+					"cells": [[2, 2], [3, 2], [4, 2]]
+				}
+			],
+			"mechanics": [
+				"base",
+				"walls",
+				"lengths",
+				"locked-holes"
+			],
+			"mechanicData": {
+				"walls": [[3, 6], [5, 4], [5, 1], [1, 5], [6, 4], [4, 1], [0, 2]],
+				"locked-holes": [
+					{
+						"cell": [5, 5],
+						"needs": 2
+					}
+				]
+			},
+			"timeLimit": 40,
+			"stars": {
+				"two": 0.3,
+				"three": 0.6
+			},
+			"tutorial": true,
+			"name": "Candados",
+			"hint": "Los agujeros con candado se abren cuando entran otros geckos.",
+			"meta": {
+				"minMoves": 21,
+				"difficulty": 2.9,
+				"optimal": false,
+				"dependency": 0.38,
+				"parkings": 0,
+				"tier": 0
+			}
+		},
+		{
+			"id": 52,
+			"seed": 4271801091,
+			"generatorVersion": 2,
+			"source": "generated",
+			"grid": {
+				"w": 7,
+				"h": 9
+			},
+			"holes": [
+				{
+					"color": "green",
+					"cell": [5, 4]
+				},
+				{
+					"color": "blue",
+					"cell": [6, 4]
+				},
+				{
+					"color": "red",
+					"cell": [4, 8]
+				},
+				{
+					"color": "yellow",
+					"cell": [4, 3]
+				},
+				{
+					"color": "purple",
+					"cell": [3, 1]
+				},
+				{
+					"color": "orange",
+					"cell": [0, 8]
+				},
+				{
+					"color": "cyan",
+					"cell": [2, 5]
+				},
+				{
+					"color": "pink",
+					"cell": [2, 7]
+				}
+			],
+			"geckos": [
+				{
+					"id": "g1",
+					"color": "green",
+					"cells": [[5, 3], [6, 3], [6, 2], [6, 1], [5, 1]]
+				},
+				{
+					"id": "g2",
+					"color": "blue",
+					"cells": [[5, 7], [5, 8], [6, 8]]
+				},
+				{
+					"id": "g3",
+					"color": "red",
+					"cells": [[6, 6], [5, 6], [5, 5], [6, 5]]
+				},
+				{
+					"id": "g4",
+					"color": "yellow",
+					"cells": [[2, 4], [3, 4], [3, 3], [2, 3], [2, 2]]
+				},
+				{
+					"id": "g5",
+					"color": "purple",
+					"cells": [[1, 0], [2, 0], [2, 1], [1, 1]]
+				},
+				{
+					"id": "g6",
+					"color": "orange",
+					"cells": [[0, 7], [0, 6], [0, 5]]
+				},
+				{
+					"id": "g7",
+					"color": "cyan",
+					"cells": [[1, 3], [0, 3], [0, 2]]
+				},
+				{
+					"id": "g8",
+					"color": "pink",
+					"cells": [[3, 6], [3, 7], [3, 8]]
+				}
+			],
+			"mechanics": [
+				"base",
+				"walls",
+				"lengths",
+				"locked-holes"
+			],
+			"mechanicData": {
+				"walls": [[4, 0], [1, 5], [4, 1], [0, 4], [5, 2], [4, 7], [1, 6], [0, 0]],
+				"locked-holes": [
+					{
+						"cell": [5, 4],
+						"needs": 2
+					}
+				]
+			},
+			"timeLimit": 35,
+			"stars": {
+				"two": 0.3,
+				"three": 0.6
+			},
+			"meta": {
+				"minMoves": 20,
+				"difficulty": 3,
+				"optimal": true,
+				"dependency": 0.5,
+				"parkings": 0,
+				"tier": 0
+			}
+		},
+		{
+			"id": 53,
+			"seed": 3417600633,
+			"generatorVersion": 2,
+			"source": "generated",
+			"grid": {
+				"w": 7,
+				"h": 9
+			},
+			"holes": [
+				{
+					"color": "green",
+					"cell": [2, 7]
+				},
+				{
+					"color": "blue",
+					"cell": [5, 0]
+				},
+				{
+					"color": "red",
+					"cell": [2, 2]
+				},
+				{
+					"color": "yellow",
+					"cell": [6, 3]
+				},
+				{
+					"color": "purple",
+					"cell": [4, 5]
+				},
+				{
+					"color": "orange",
+					"cell": [2, 1]
+				},
+				{
+					"color": "cyan",
+					"cell": [3, 0]
+				}
+			],
+			"geckos": [
+				{
+					"id": "g1",
+					"color": "green",
+					"cells": [[5, 4], [4, 4], [3, 4], [2, 4], [2, 5]]
+				},
+				{
+					"id": "g2",
+					"color": "blue",
+					"cells": [[6, 1], [6, 2], [5, 2], [4, 2]]
+				},
+				{
+					"id": "g3",
+					"color": "red",
+					"cells": [[3, 8], [3, 7], [4, 7], [4, 8]]
+				},
+				{
+					"id": "g4",
+					"color": "yellow",
+					"cells": [[0, 5], [1, 5], [1, 4], [0, 4], [0, 3]]
+				},
+				{
+					"id": "g5",
+					"color": "purple",
+					"cells": [[3, 1], [3, 2]]
+				},
+				{
+					"id": "g6",
+					"color": "orange",
+					"cells": [[1, 7], [1, 6], [2, 6], [3, 6], [4, 6]]
+				},
+				{
+					"id": "g7",
+					"color": "cyan",
+					"cells": [[1, 0], [0, 0]]
+				}
+			],
+			"mechanics": [
+				"base",
+				"walls",
+				"lengths",
+				"fragile",
+				"locked-holes"
+			],
+			"mechanicData": {
+				"walls": [[0, 6], [6, 7], [5, 6], [0, 7]],
+				"locked-holes": [
+					{
+						"cell": [5, 0],
+						"needs": 1
+					}
+				],
+				"fragile": [[3, 3], [4, 3], [5, 3], [6, 4]]
+			},
+			"timeLimit": 65,
+			"stars": {
+				"two": 0.3,
+				"three": 0.6
+			},
+			"meta": {
+				"minMoves": 41,
+				"difficulty": 9.6,
+				"optimal": false,
+				"dependency": 0.71,
+				"parkings": 1,
+				"tier": 1
+			}
+		},
+		{
+			"id": 54,
+			"seed": 514884230,
+			"generatorVersion": 2,
+			"source": "generated",
+			"grid": {
+				"w": 7,
+				"h": 9
+			},
+			"holes": [
+				{
+					"color": "green",
+					"cell": [2, 7]
+				},
+				{
+					"color": "blue",
+					"cell": [4, 8]
+				},
+				{
+					"color": "red",
+					"cell": [3, 5]
+				},
+				{
+					"color": "yellow",
+					"cell": [5, 1]
+				},
+				{
+					"color": "purple",
+					"cell": [2, 1]
+				},
+				{
+					"color": "orange",
+					"cell": [1, 0]
+				},
+				{
+					"color": "cyan",
+					"cell": [0, 4]
+				},
+				{
+					"color": "pink",
+					"cell": [2, 4]
+				}
+			],
+			"geckos": [
+				{
+					"id": "g1",
+					"color": "green",
+					"cells": [[0, 7], [0, 6], [0, 5], [1, 5]]
+				},
+				{
+					"id": "g2",
+					"color": "blue",
+					"cells": [[5, 5], [5, 6], [5, 7], [6, 7], [6, 6]]
+				},
+				{
+					"id": "g3",
+					"color": "red",
+					"cells": [[4, 7], [4, 6], [4, 5]]
+				},
+				{
+					"id": "g4",
+					"color": "yellow",
+					"cells": [[3, 4], [4, 4], [4, 3], [5, 3]]
+				},
+				{
+					"id": "g5",
+					"color": "purple",
+					"cells": [[1, 3], [0, 3]]
+				},
+				{
+					"id": "g6",
+					"color": "orange",
+					"cells": [[3, 0], [2, 0]]
+				},
+				{
+					"id": "g7",
+					"color": "cyan",
+					"cells": [[3, 1], [3, 2], [4, 2], [4, 1]]
+				},
+				{
+					"id": "g8",
+					"color": "pink",
+					"cells": [[2, 6], [3, 6], [3, 7]]
+				}
+			],
+			"mechanics": [
+				"base",
+				"walls",
+				"lengths",
+				"fragile",
+				"locked-holes"
+			],
+			"mechanicData": {
+				"walls": [[6, 1], [3, 8], [2, 8], [1, 2], [3, 3], [6, 3], [1, 6], [6, 2]],
+				"locked-holes": [
+					{
+						"cell": [2, 7],
+						"needs": 1
+					}
+				],
+				"fragile": [[1, 4], [2, 5], [1, 7]]
+			},
+			"timeLimit": 40,
+			"stars": {
+				"two": 0.3,
+				"three": 0.6
+			},
+			"meta": {
+				"minMoves": 21,
+				"difficulty": 2.6,
+				"optimal": false,
+				"dependency": 0.25,
+				"parkings": 0,
+				"tier": 0
+			}
+		},
+		{
+			"id": 55,
+			"seed": 1227323749,
+			"generatorVersion": 2,
+			"source": "generated",
+			"grid": {
+				"w": 7,
+				"h": 9
+			},
+			"holes": [
+				{
+					"color": "green",
+					"cell": [0, 3]
+				},
+				{
+					"color": "blue",
+					"cell": [4, 6]
+				},
+				{
+					"color": "red",
+					"cell": [6, 4]
+				},
+				{
+					"color": "yellow",
+					"cell": [3, 6]
+				},
+				{
+					"color": "purple",
+					"cell": [1, 3]
+				},
+				{
+					"color": "orange",
+					"cell": [6, 8]
+				},
+				{
+					"color": "cyan",
+					"cell": [5, 3]
+				},
+				{
+					"color": "pink",
+					"cell": [2, 6]
+				}
+			],
+			"geckos": [
+				{
+					"id": "g1",
+					"color": "green",
+					"cells": [[1, 0], [1, 1], [1, 2], [2, 2], [2, 1]]
+				},
+				{
+					"id": "g2",
+					"color": "blue",
+					"cells": [[5, 5], [5, 4]]
+				},
+				{
+					"id": "g3",
+					"color": "red",
+					"cells": [[4, 2], [4, 3], [4, 4], [3, 4]]
+				},
+				{
+					"id": "g4",
+					"color": "yellow",
+					"cells": [[4, 7], [3, 7], [2, 7], [2, 8], [1, 8]]
+				},
+				{
+					"id": "g5",
+					"color": "purple",
+					"cells": [[3, 3], [3, 2]]
+				},
+				{
+					"id": "g6",
+					"color": "orange",
+					"cells": [[6, 7], [6, 6], [6, 5]]
+				},
+				{
+					"id": "g7",
+					"color": "cyan",
+					"cells": [[3, 0], [4, 0], [4, 1]]
+				},
+				{
+					"id": "g8",
+					"color": "pink",
+					"cells": [[0, 4], [1, 4]]
+				}
+			],
+			"mechanics": [
+				"base",
+				"walls",
+				"lengths",
+				"fragile",
+				"locked-holes"
+			],
+			"mechanicData": {
+				"walls": [[6, 3], [2, 0], [5, 8], [5, 0], [3, 1], [3, 8], [4, 8], [2, 4], [5, 1]],
+				"locked-holes": [
+					{
+						"cell": [4, 6],
+						"needs": 2
+					}
+				],
+				"fragile": [[3, 5], [4, 5], [5, 6], [5, 7]]
+			},
+			"timeLimit": 35,
+			"stars": {
+				"two": 0.3,
+				"three": 0.6
+			},
+			"meta": {
+				"minMoves": 20,
+				"difficulty": 2.8,
+				"optimal": true,
+				"dependency": 0.38,
+				"parkings": 0,
+				"tier": 0
+			}
+		},
+		{
+			"id": 56,
+			"seed": 228475384,
+			"generatorVersion": 2,
+			"source": "generated",
+			"grid": {
+				"w": 7,
+				"h": 9
+			},
+			"holes": [
+				{
+					"color": "green",
+					"cell": [3, 1]
+				},
+				{
+					"color": "blue",
+					"cell": [0, 7]
+				},
+				{
+					"color": "red",
+					"cell": [5, 8]
+				},
+				{
+					"color": "yellow",
+					"cell": [5, 4]
+				},
+				{
+					"color": "purple",
+					"cell": [4, 2]
+				},
+				{
+					"color": "orange",
+					"cell": [6, 2]
+				},
+				{
+					"color": "cyan",
+					"cell": [2, 0]
+				},
+				{
+					"color": "pink",
+					"cell": [6, 0]
+				},
+				{
+					"color": "green",
+					"cell": [2, 4]
+				}
+			],
+			"geckos": [
+				{
+					"id": "g1",
+					"color": "green",
+					"cells": [[1, 1], [1, 0]]
+				},
+				{
+					"id": "g2",
+					"color": "blue",
+					"cells": [[2, 6], [2, 7], [3, 7], [4, 7], [4, 8]]
+				},
+				{
+					"id": "g3",
+					"color": "red",
+					"cells": [[6, 7], [6, 6], [5, 6]]
+				},
+				{
+					"id": "g4",
+					"color": "yellow",
+					"cells": [[2, 1], [2, 2], [3, 2], [3, 3], [4, 3]]
+				},
+				{
+					"id": "g5",
+					"color": "purple",
+					"cells": [[5, 3], [5, 2], [5, 1]]
+				},
+				{
+					"id": "g6",
+					"color": "orange",
+					"cells": [[6, 3], [6, 4]]
+				},
+				{
+					"id": "g7",
+					"color": "cyan",
+					"cells": [[0, 3], [0, 2], [1, 2]]
+				},
+				{
+					"id": "g8",
+					"color": "pink",
+					"cells": [[5, 0], [4, 0], [4, 1]]
+				},
+				{
+					"id": "g9",
+					"color": "green",
+					"cells": [[0, 6], [1, 6], [1, 7], [1, 8], [0, 8]]
+				}
+			],
+			"mechanics": [
+				"base",
+				"walls",
+				"lengths",
+				"fragile",
+				"locked-holes"
+			],
+			"mechanicData": {
+				"walls": [[4, 6], [1, 4], [3, 4], [2, 3], [6, 5], [0, 0], [5, 7], [5, 5], [0, 1]],
+				"locked-holes": [
+					{
+						"cell": [6, 0],
+						"needs": 2
+					}
+				],
+				"fragile": [[6, 8], [1, 5], [0, 5]]
+			},
+			"timeLimit": 35,
+			"stars": {
+				"two": 0.3,
+				"three": 0.6
+			},
+			"meta": {
+				"minMoves": 20,
+				"difficulty": 3.1,
+				"optimal": false,
+				"dependency": 0.56,
+				"parkings": 0,
+				"tier": 0
+			}
+		},
+		{
+			"id": 57,
+			"seed": 2173409239,
+			"generatorVersion": 2,
+			"source": "generated",
+			"grid": {
+				"w": 7,
+				"h": 9
+			},
+			"holes": [
+				{
+					"color": "green",
+					"cell": [2, 5]
+				},
+				{
+					"color": "blue",
+					"cell": [6, 3]
+				},
+				{
+					"color": "red",
+					"cell": [2, 8]
+				},
+				{
+					"color": "yellow",
+					"cell": [6, 8]
+				},
+				{
+					"color": "purple",
+					"cell": [5, 0]
+				},
+				{
+					"color": "orange",
+					"cell": [1, 4]
+				},
+				{
+					"color": "cyan",
+					"cell": [2, 1]
+				}
+			],
+			"geckos": [
+				{
+					"id": "g1",
+					"color": "green",
+					"cells": [[3, 2], [4, 2], [4, 3]]
+				},
+				{
+					"id": "g2",
+					"color": "blue",
+					"cells": [[5, 6], [4, 6], [4, 7]]
+				},
+				{
+					"id": "g3",
+					"color": "red",
+					"cells": [[0, 6], [0, 7], [1, 7], [1, 8], [0, 8]]
+				},
+				{
+					"id": "g4",
+					"color": "yellow",
+					"cells": [[3, 1], [4, 1], [4, 0], [3, 0], [2, 0]]
+				},
+				{
+					"id": "g5",
+					"color": "purple",
+					"cells": [[3, 7], [3, 8]]
+				},
+				{
+					"id": "g6",
+					"color": "orange",
+					"cells": [[3, 3], [2, 3], [2, 4], [3, 4], [3, 5]]
+				},
+				{
+					"id": "g7",
+					"color": "cyan",
+					"cells": [[1, 1], [1, 0], [0, 0], [0, 1]]
+				}
+			],
+			"mechanics": [
+				"base",
+				"walls",
+				"lengths",
+				"fragile",
+				"locked-holes"
+			],
+			"mechanicData": {
+				"walls": [[2, 6], [3, 6], [6, 5], [4, 5], [0, 5]],
+				"locked-holes": [
+					{
+						"cell": [2, 8],
+						"needs": 2
+					},
+					{
+						"cell": [2, 1],
+						"needs": 2
+					}
+				],
+				"fragile": [[5, 4], [5, 3], [5, 1]]
+			},
+			"timeLimit": 80,
+			"stars": {
+				"two": 0.3,
+				"three": 0.6
+			},
+			"meta": {
+				"minMoves": 55,
+				"difficulty": 17,
+				"optimal": false,
+				"dependency": 0.86,
+				"parkings": 2,
+				"tier": 2
+			}
+		},
+		{
+			"id": 58,
+			"seed": 993572891,
+			"generatorVersion": 2,
+			"source": "generated",
+			"grid": {
+				"w": 7,
+				"h": 9
+			},
+			"holes": [
+				{
+					"color": "green",
+					"cell": [2, 1]
+				},
+				{
+					"color": "blue",
+					"cell": [1, 8]
+				},
+				{
+					"color": "red",
+					"cell": [0, 5]
+				},
+				{
+					"color": "yellow",
+					"cell": [6, 3]
+				},
+				{
+					"color": "purple",
+					"cell": [3, 3]
+				},
+				{
+					"color": "orange",
+					"cell": [3, 8]
+				},
+				{
+					"color": "cyan",
+					"cell": [6, 7]
+				},
+				{
+					"color": "pink",
+					"cell": [3, 6]
+				},
+				{
+					"color": "green",
+					"cell": [6, 2]
+				}
+			],
+			"geckos": [
+				{
+					"id": "g1",
+					"color": "green",
+					"cells": [[3, 2], [3, 1], [3, 0]]
+				},
+				{
+					"id": "g2",
+					"color": "blue",
+					"cells": [[0, 8], [0, 7], [0, 6]]
+				},
+				{
+					"id": "g3",
+					"color": "red",
+					"cells": [[1, 4], [1, 3], [2, 3], [2, 2]]
+				},
+				{
+					"id": "g4",
+					"color": "yellow",
+					"cells": [[5, 2], [5, 3]]
+				},
+				{
+					"id": "g5",
+					"color": "purple",
+					"cells": [[1, 2], [1, 1], [1, 0], [0, 0], [0, 1]]
+				},
+				{
+					"id": "g6",
+					"color": "orange",
+					"cells": [[4, 6], [4, 7], [3, 7], [2, 7]]
+				},
+				{
+					"id": "g7",
+					"color": "cyan",
+					"cells": [[6, 5], [5, 5], [4, 5], [3, 5]]
+				},
+				{
+					"id": "g8",
+					"color": "pink",
+					"cells": [[3, 4], [4, 4], [5, 4]]
+				},
+				{
+					"id": "g9",
+					"color": "green",
+					"cells": [[6, 0], [5, 0], [4, 0]]
+				}
+			],
+			"mechanics": [
+				"base",
+				"walls",
+				"lengths",
+				"locked-holes"
+			],
+			"mechanicData": {
+				"walls": [[2, 5], [5, 1], [0, 4], [6, 4], [2, 6], [5, 6], [2, 4], [4, 2], [4, 1], [0, 2]],
+				"locked-holes": [
+					{
+						"cell": [6, 3],
+						"needs": 3
+					},
+					{
+						"cell": [2, 1],
+						"needs": 2
+					}
+				]
+			},
+			"timeLimit": 35,
+			"stars": {
+				"two": 0.3,
+				"three": 0.6
+			},
+			"meta": {
+				"minMoves": 17,
+				"difficulty": 2.5,
+				"optimal": true,
+				"dependency": 0.44,
+				"parkings": 0,
+				"tier": 0
+			}
+		},
+		{
+			"id": 59,
+			"seed": 1823320560,
+			"generatorVersion": 2,
+			"source": "generated",
+			"grid": {
+				"w": 7,
+				"h": 9
+			},
+			"holes": [
+				{
+					"color": "green",
+					"cell": [5, 7]
+				},
+				{
+					"color": "blue",
+					"cell": [1, 8]
+				},
+				{
+					"color": "red",
+					"cell": [6, 6]
+				},
+				{
+					"color": "yellow",
+					"cell": [4, 6]
+				},
+				{
+					"color": "purple",
+					"cell": [4, 7]
+				},
+				{
+					"color": "orange",
+					"cell": [2, 8]
+				},
+				{
+					"color": "cyan",
+					"cell": [6, 0]
+				}
+			],
+			"geckos": [
+				{
+					"id": "g1",
+					"color": "green",
+					"cells": [[1, 2], [0, 2], [0, 3], [0, 4], [1, 4]]
+				},
+				{
+					"id": "g2",
+					"color": "blue",
+					"cells": [[1, 1], [2, 1], [2, 2], [2, 3], [2, 4]]
+				},
+				{
+					"id": "g3",
+					"color": "red",
+					"cells": [[4, 4], [3, 4], [3, 5], [2, 5], [2, 6]]
+				},
+				{
+					"id": "g4",
+					"color": "yellow",
+					"cells": [[1, 5], [0, 5]]
+				},
+				{
+					"id": "g5",
+					"color": "purple",
+					"cells": [[4, 3], [3, 3], [3, 2], [3, 1], [4, 1]]
+				},
+				{
+					"id": "g6",
+					"color": "orange",
+					"cells": [[2, 7], [1, 7]]
+				},
+				{
+					"id": "g7",
+					"color": "cyan",
+					"cells": [[4, 2], [5, 2], [5, 3]]
+				}
+			],
+			"mechanics": [
+				"base",
+				"walls",
+				"lengths",
+				"locked-holes"
+			],
+			"mechanicData": {
+				"walls": [[6, 4], [2, 0], [0, 1], [6, 2], [3, 8]],
+				"locked-holes": [
+					{
+						"cell": [6, 6],
+						"needs": 3
+					},
+					{
+						"cell": [2, 8],
+						"needs": 3
+					}
+				]
+			},
+			"timeLimit": 50,
+			"stars": {
+				"two": 0.3,
+				"three": 0.6
+			},
+			"meta": {
+				"minMoves": 29,
+				"difficulty": 5.8,
+				"optimal": true,
+				"dependency": 1,
+				"parkings": 1,
+				"tier": 1
+			}
+		},
+		{
+			"id": 60,
+			"seed": 191152653,
+			"generatorVersion": 2,
+			"source": "generated",
+			"grid": {
+				"w": 8,
+				"h": 10
+			},
+			"holes": [
+				{
+					"color": "green",
+					"cell": [0, 1]
+				},
+				{
+					"color": "blue",
+					"cell": [3, 5]
+				},
+				{
+					"color": "red",
+					"cell": [6, 4]
+				},
+				{
+					"color": "yellow",
+					"cell": [3, 6]
+				},
+				{
+					"color": "purple",
+					"cell": [4, 8]
+				},
+				{
+					"color": "orange",
+					"cell": [4, 6]
+				},
+				{
+					"color": "cyan",
+					"cell": [5, 1]
+				},
+				{
+					"color": "pink",
+					"cell": [2, 9]
+				},
+				{
+					"color": "green",
+					"cell": [0, 7]
+				},
+				{
+					"color": "blue",
+					"cell": [6, 7]
+				},
+				{
+					"color": "red",
+					"cell": [1, 7]
+				},
+				{
+					"color": "yellow",
+					"cell": [5, 5]
+				},
+				{
+					"color": "purple",
+					"cell": [0, 3]
+				},
+				{
+					"color": "orange",
+					"cell": [3, 9]
+				},
+				{
+					"color": "cyan",
+					"cell": [7, 6]
+				}
+			],
+			"geckos": [
+				{
+					"id": "g1",
+					"color": "green",
+					"cells": [[6, 9], [6, 8]]
+				},
+				{
+					"id": "g2",
+					"color": "blue",
+					"cells": [[2, 3], [2, 2], [1, 2], [1, 3], [1, 4]]
+				},
+				{
+					"id": "g3",
+					"color": "red",
+					"cells": [[5, 6], [6, 6]]
+				},
+				{
+					"id": "g4",
+					"color": "yellow",
+					"cells": [[3, 8], [2, 8], [2, 7], [2, 6]]
+				},
+				{
+					"id": "g5",
+					"color": "purple",
+					"cells": [[5, 2], [4, 2], [4, 1], [3, 1]]
+				},
+				{
+					"id": "g6",
+					"color": "orange",
+					"cells": [[3, 2], [3, 3], [3, 4], [4, 4], [4, 3]]
+				},
+				{
+					"id": "g7",
+					"color": "cyan",
+					"cells": [[6, 1], [6, 0], [5, 0], [4, 0], [3, 0]]
+				},
+				{
+					"id": "g8",
+					"color": "pink",
+					"cells": [[2, 4], [2, 5], [1, 5], [0, 5], [0, 6]]
+				},
+				{
+					"id": "g9",
+					"color": "green",
+					"cells": [[7, 7], [7, 8], [7, 9]]
+				},
+				{
+					"id": "g10",
+					"color": "blue",
+					"cells": [[4, 9], [5, 9], [5, 8], [5, 7], [4, 7]]
+				},
+				{
+					"id": "g11",
+					"color": "red",
+					"cells": [[1, 0], [0, 0]]
+				},
+				{
+					"id": "g12",
+					"color": "yellow",
+					"cells": [[6, 2], [7, 2], [7, 3]]
+				},
+				{
+					"id": "g13",
+					"color": "purple",
+					"cells": [[5, 3], [6, 3]]
+				},
+				{
+					"id": "g14",
+					"color": "orange",
+					"cells": [[1, 9], [0, 9], [0, 8]]
+				},
+				{
+					"id": "g15",
+					"color": "cyan",
+					"cells": [[2, 0], [2, 1], [1, 1]]
+				}
+			],
+			"mechanics": [
+				"base",
+				"walls",
+				"lengths",
+				"fragile",
+				"locked-holes"
+			],
+			"mechanicData": {
+				"walls": [[7, 1], [3, 7], [0, 4], [7, 0], [5, 4], [7, 4]],
+				"locked-holes": [
+					{
+						"cell": [5, 1],
+						"needs": 3
+					},
+					{
+						"cell": [3, 6],
+						"needs": 3
+					}
+				],
+				"fragile": [[6, 5], [1, 6], [4, 5]]
+			},
+			"timeLimit": 130,
+			"stars": {
+				"two": 0.3,
+				"three": 0.6
+			},
+			"meta": {
+				"minMoves": 92,
+				"difficulty": 28.2,
+				"optimal": false,
+				"dependency": 0.93,
+				"parkings": 3,
+				"tier": 3
+			}
+		}
+	]
+}

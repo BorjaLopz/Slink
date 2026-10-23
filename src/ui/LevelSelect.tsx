@@ -1,58 +1,80 @@
 import type { Level } from "../engine";
-import { PACK_SIZE_UI, groupIntoPacks } from "./packs";
 import { isUnlocked, nextLevelId, useProgress } from "../state/progress";
+import { BoardPreview } from "./BoardPreview";
+import { CornerMarks } from "./CornerMarks";
+import { BackIcon, CheckIcon, LockIcon } from "./icons";
+import { levelNumber, levelTitle } from "./levelText";
+import { PACK_SIZE_UI, groupIntoPacks } from "./packs";
 import { StarRow } from "./StarRow";
-import { TierLabel } from "./TierLabel";
+import { formatClock } from "./useCountdown";
 
 interface LevelSelectProps {
 	levels: Level[];
 	onPlay(levelId: number): void;
+	onBack(): void;
 }
 
-export function LevelSelect({ levels, onPlay }: LevelSelectProps) {
+const THUMB_WIDTH = 72;
+
+export function LevelSelect({ levels, onPlay, onBack }: LevelSelectProps) {
 	const progress = useProgress();
 	const beaten = levels.filter((l) => progress.stars[l.id] !== undefined).length;
-	const totalStars = Object.values(progress.stars).reduce((sum, s) => sum + s, 0);
 	const next = nextLevelId(progress, levels.map((l) => l.id));
 
 	return (
-		<main className="screen screen-enter menu">
-			<header className="menu-header">
-				<h1 className="menu-title">Slink</h1>
-				<p className="menu-stats">
-					{beaten}/{levels.length} niveles · {totalStars} ★
-				</p>
-				<button className="pill-button menu-play" onClick={() => onPlay(next)}>
-					Jugar nivel {next}
+		<main className="screen screen-enter levels">
+			<header className="topbar">
+				<button className="icon-btn" onClick={onBack} aria-label="Volver">
+					<BackIcon />
 				</button>
+				<h1 className="topbar-title">Niveles</h1>
+				<span className="topbar-count">
+					{beaten}/{levels.length}
+				</span>
 			</header>
 
-			<div className="packs">
+			<div className="level-list">
 				{groupIntoPacks(levels).map((pack) => (
 					<section key={pack.index} className="pack">
-						<h2 className="pack-title">
-							Pack {pack.index} <span>
-								{(pack.index - 1) * PACK_SIZE_UI + 1}–{pack.levels[pack.levels.length - 1].id}
-							</span>
+						<h2 className="label pack-title">
+							Pack {pack.index} · {(pack.index - 1) * PACK_SIZE_UI + 1}–{pack.levels[pack.levels.length - 1].id}
 						</h2>
-						<div className="level-grid">
-							{pack.levels.map((level) => {
-								const unlocked = isUnlocked(progress, level.id);
-								return (
-									<button
-										key={level.id}
-										className={`level-card ${level.id === next ? "level-card-next" : ""}`}
-										disabled={!unlocked}
-										onClick={() => onPlay(level.id)}
-										aria-label={`Nivel ${level.id}${unlocked ? "" : ", bloqueado"}`}
-									>
-										<span className="level-number">{level.id}</span>
-										<TierLabel tier={level.meta?.tier} />
-										{unlocked ? <StarRow earned={progress.stars[level.id] ?? 0} /> : <span className="level-locked">Bloqueado</span>}
-									</button>
-								);
-							})}
-						</div>
+						{pack.levels.map((level) => {
+							const unlocked = isUnlocked(progress, level.id);
+							const stars = progress.stars[level.id];
+							const best = progress.bestTimes[level.id];
+							const current = level.id === next;
+							return (
+								<button
+									key={level.id}
+									className={`level-row ${current ? "level-row-current framed" : ""}`}
+									disabled={!unlocked}
+									onClick={() => onPlay(level.id)}
+									aria-label={`Nivel ${level.id}, ${levelTitle(level)}${unlocked ? "" : ", bloqueado"}`}
+								>
+									<span className="level-thumb">
+										<BoardPreview level={level} width={THUMB_WIDTH} />
+									</span>
+									<span className="level-info">
+										<span className="level-number">{levelNumber(level.id)}</span>
+										<span className="level-name">{levelTitle(level)}</span>
+										{level.tutorial && level.hint && <span className="level-hint">{level.hint}</span>}
+									</span>
+									<span className="level-status">
+										{!unlocked && <LockIcon />}
+										{unlocked && stars !== undefined && (
+											<>
+												<CheckIcon />
+												{best !== undefined && <span className="level-time">{formatClock(best)}</span>}
+												<StarRow earned={stars} />
+											</>
+										)}
+										{unlocked && stars === undefined && <span className="level-play">Jugar</span>}
+									</span>
+									{current && <CornerMarks />}
+								</button>
+							);
+						})}
 					</section>
 				))}
 			</div>

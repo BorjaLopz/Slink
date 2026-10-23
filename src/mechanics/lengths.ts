@@ -8,5 +8,7 @@ export const lengths: Mechanic = {
 	id: "lengths",
 	priority: 0,
 	complexity: 1,
+	basic: true,
+	name: "Longitudes",
 	tutorialHint: "Los lagartos cortos giran en cualquier hueco; los largos necesitan espacio.",
 };

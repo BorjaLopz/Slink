@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readFileSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Level, LevelManifest, LevelPack } from "../src/engine";
@@ -45,10 +46,22 @@ export function writeCatalog(levels: Level[], previous: LevelManifest): LevelMan
 		version: previous.version + 1,
 		generatedAt: new Date().toISOString(),
 		packs,
-		mechanicsUnlock: previous.mechanicsUnlock,
+		timeline: previous.timeline,
+		frozenThrough: previous.frozenThrough,
+		frozenHash: previous.frozenHash,
 	};
-	writeFileSync(join(LEVELS_DIR, "manifest.json"), `${JSON.stringify(manifest, null, "\t")}\n`);
+	writeManifest(manifest);
 	return manifest;
+}
+
+/** Fingerprint of the published levels; validate:levels fails if any of them changes afterwards. */
+export function frozenHash(levels: Level[], through: number): string {
+	const published = levels.filter((l) => l.id <= through).sort((a, b) => a.id - b.id);
+	return createHash("sha256").update(JSON.stringify(published)).digest("hex").slice(0, 16);
+}
+
+export function writeManifest(manifest: LevelManifest): void {
+	writeFileSync(join(LEVELS_DIR, "manifest.json"), `${JSON.stringify(manifest, null, "\t")}\n`);
 }
 
 /** Tab-indented JSON with each cell and each list of cells on one line, so pack diffs stay readable. */

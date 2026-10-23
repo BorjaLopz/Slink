@@ -63,31 +63,24 @@
 
 ---
 
-## 3. Herramientas desbloqueables (mecánicas)
+## 3. Mecánicas
 
-Cada herramienta tiene: **ID**, **comportamiento**, **nivel de desbloqueo** y **nivel tutorial**. Los niveles de desbloqueo son orientativos y se ajustan jugando.
+El catálogo es **abierto**: se añaden mecánicas a medida que se diseñan, sin número de nivel fijado de antemano. Cada una entra en el juego cuando se termina (ver 4.1.b).
 
-| # | ID | Herramienta | Comportamiento | Se desbloquea en |
-|---|----|-------------|----------------|------------------|
-| 0 | `base` | Arrastre + agujeros de color | Reglas de la sección 2 | Nivel 1 |
-| 1 | `walls` | Muros | Celdas infranqueables que crean pasillos | Nivel 6 |
-| 2 | `lengths` | Longitudes variables | Lagartos de 2 a 6 celdas (antes todos ~3) | Nivel 12 |
-| 3 | `portals` | Portales emparejados | Entrar por un portal saca la cabeza por su pareja; el cuerpo atraviesa celda a celda | Nivel 25 |
-| 4 | `ice` | Hielo | Una celda de hielo hace que el lagarto se deslice en esa dirección hasta chocar | Nivel 40 |
-| 5 | `fragile` | Hojas frágiles | Se puede cruzar una sola vez; luego se convierte en muro | Nivel 55 |
-| 6 | `switches` | Interruptores y puertas | Pisar un interruptor de color abre/cierra puertas de ese color | Nivel 75 |
-| 7 | `capacity` | Agujeros de capacidad N / comodín | Un agujero admite 2 lagartos o acepta cualquier color | Nivel 100 |
-| 8 | `conveyor` | Cintas transportadoras | Empujan lo que está encima una celda por turno de arrastre | Nivel 130 |
-| 9 | `sleepers` | Lagartos dormidos | Inmóviles hasta que otro lagarto pasa por una celda adyacente | Nivel 160 |
-| ∞ | `chaos` | Combinaciones | A partir de aquí se mezclan 2-4 herramientas por nivel con parámetros crecientes | Nivel 200+ |
+| ID | Mecánica | Comportamiento | Estado | Debut |
+|----|----------|----------------|--------|-------|
+| `base` | Arrastre + agujeros de color | Reglas de la sección 2 | Implementada | Nivel 1 |
+| `walls` | Muros | Celdas infranqueables que crean pasillos (básica) | Implementada | Nivel 6 |
+| `lengths` | Longitudes variables | Lagartos de 2 a 6 celdas (básica) | Implementada | Nivel 12 |
+| `fragile` | Hojas frágiles | Se cruzan una sola vez; luego son muro | Implementada | Nivel 20 |
+| `locked-holes` | Candados | El agujero se abre cuando N geckos ya han entrado en otros | Implementada | Nivel 51 |
 
-> Regla de oro: **una mecánica nueva aparece primero sola** en un nivel de introducción, luego en 3-5 niveles combinada solo con lo básico, y después ya entra en el pool general.
+El banco completo de ideas, con su estado, está en [`docs/mechanics/IDEAS.md`](docs/mechanics/IDEAS.md). La fuente de verdad del debut es `manifest.timeline`.
 
-### Ideas en reserva (no comprometidas)
-- Lagartos con "pegamento" (no se pueden arrastrar por la cola, solo por la cabeza).
-- Niebla de guerra parcial (ver solo X celdas alrededor).
-- Meta-recursos: pistas, deshacer limitado, tiempo extra.
-- Eventos diarios (nivel del día con semilla fija).
+- **Básicas** (`basic: true`): vocabulario del tablero. Una vez presentadas están en todos los niveles y no gastan presupuesto de complejidad.
+- **Giros** (el resto): entran y salen de los niveles según el currículo.
+
+> Regla de oro: **una mecánica nueva aparece primero sola** en sus niveles de adaptación, luego en niveles de profundización con intensidad creciente, y después entra en el pool de combinaciones.
 
 ---
 
@@ -104,7 +97,7 @@ Un nivel se describe por **datos**, no por código. Hay dos fuentes de niveles q
 
 ```
 n -> {
-  mechanics:   herramientas con unlockLevel <= n (pool activo),
+  mechanics:   según el currículo (4.1.b),
   gridSize:    min(12, 5 + floor(n / 20)),
   geckos:      min(12, 2 + floor(n / 8)),      // v1: más denso que el /12 original; con poca densidad no hay cruces
   timeFactor:  max(0.5, 1.0 - n / 600),   // multiplica el tiempo base de la solución
@@ -112,6 +105,16 @@ n -> {
   dependency:  min(1, min(0.85, 0.25 + n / 150) * saw)   // fracción objetivo de lagartos "dependientes" (ver 4.4)
 }
 ```
+
+### 4.1.b Progresión de mecánicas (currículo) — `src/generator/curriculum.ts`
+- **Línea de tiempo** (`manifest.timeline: [{ id, debut }]`): se añade una entrada al terminar una mecánica (`npm run mechanic:release -- <id>`). Su debut es el primer nivel **no publicado**, y nunca a menos de 10 niveles del debut anterior, para no enseñar dos a la vez.
+- **Niveles congelados** (`manifest.frozenThrough` + `frozenHash`): antes de publicar se ejecuta `npm run levels:freeze`. `gen:levels` se niega a regenerar niveles congelados (salvo `--unfreeze`) y `validate:levels` falla si su contenido cambia. **El juego solo crece por el final**: el progreso guardado nunca ve un nivel cambiar.
+- **Ciclo de cada mecánica**, sea cual sea su debut:
+  1. **Adaptación** (2 niveles): la mecánica sola + las básicas, dificultad fácil siempre, intensidad 0.25. El primero es tutorial (`tutorial: true` + `tutorialHint` de la mecánica).
+  2. **Profundización** (8 niveles): siempre presente, intensidad de 0.35 a 1. Con un 50 % de probabilidad vuelve una mecánica anterior. Rige el patrón de dificultad del pack.
+  3. **Pool**: cada nivel elige entre 1 y 4 giros conocidos al azar (con semilla), dentro del presupuesto `4 + floor(n / 25)` de complejidad, sin conflictos y favoreciendo sinergias. Cada 25 niveles (jefe) intenta empezar por una pareja con sinergia. Intensidad `min(1, 0.5 + (n - debut) / 200)`.
+- Si pasan muchos niveles sin mecánicas nuevas, no pasa nada: la dificultad base sigue creciendo con `n` y el pool sigue combinando.
+- `validate:levels` comprueba: debut como tutorial en su nivel, ninguna mecánica antes de su debut y niveles generados idénticos al currículo.
 
 ### 4.2 Generador v1 (base + muros + longitudes) — implementado en `src/generator`
 **Generación inversa** (solución garantizada por construcción):
@@ -182,7 +185,9 @@ Para portales, hielo, frágiles, etc. la inversión exacta es complicada → **g
     { "file": "pack-0001.json", "from": 1, "to": 10 },
     { "file": "pack-0002.json", "from": 11, "to": 20 }
   ],
-  "mechanicsUnlock": { "walls": 6, "lengths": 12, "portals": 25 }
+  "timeline": [ { "id": "walls", "debut": 6 }, { "id": "lengths", "debut": 12 } ],
+  "frozenThrough": 12,
+  "frozenHash": "…"
 }
 ```
 - La app lee el manifest al arrancar; si hay packs nuevos, aparecen. **Añadir contenido = añadir ficheros + subir.**
@@ -354,7 +359,8 @@ export interface Mechanic<TData = unknown, TState = unknown> {
 
   // --- Datos y nivel ---
   validateLevel?(level: Level, data: TData): string[];               // errores de diseño (portal sin pareja...)
-  populate?(rng: RNG, grid: Grid, intensity: number): TData;         // cómo la coloca el generador (0..1)
+  populate?(rng: Random, level: Level, intensity: number): TData | undefined; // la coloca sobre un tablero ya construido (0..1)
+  withoutMechanic?(level: Level, data: TData): Level;                // el mismo nivel sin poder usarla (¿es decorativa?)
 
   // --- UI ---
   render?(g: Renderer, ctx: Ctx, data: TData, state: TState): void;
@@ -380,6 +386,8 @@ Cada paso de un lagarto (una celda) sigue SIEMPRE este orden. Las mecánicas se 
 ### 13.3 Estado y determinismo
 - Todo estado de mecánica vive en `ctx.mechState[id]`, nunca en variables globales.
 - El estado debe ser **serializable** y `stateKey` debe ser **estable** (mismo estado = misma cadena). Sin esto, el solver se rompe.
+- El estado es **inmutable**: los hooks sustituyen `ctx.state.mechState[id]`, nunca lo mutan. Así clonar un estado es una copia superficial (el solver clona millones) y "cambió el estado de una mecánica" se detecta por identidad.
+- **Irreversibilidad:** un paso que cambia el estado de alguna mecánica es irreversible. El arrastre largo de la UI (`findPath` con `avoidIrreversible`) nunca da esos pasos, y el solver de aparcamientos no los aplica de forma voraz: los explora como ramas.
 - Cero `Math.random` en el motor: cualquier aleatoriedad usa el `RNG` con semilla.
 - El motor devuelve estados **nuevos** (inmutabilidad) o es perfectamente revertible; necesario para deshacer y para el solver.
 
@@ -414,7 +422,7 @@ Una mecánica puede **emitir** eventos propios nuevos (se documentan en su ficha
 // /src/mechanics/index.ts
 export const REGISTRY: Record<string, Mechanic> = { walls, portals, ice, /* ... */ };
 ```
-El manifest define el `unlockLevel` de cada id. El generador solo usa mecánicas con `unlockLevel <= n`.
+`manifest.timeline` define el debut de cada id; el currículo (4.1.b) decide qué mecánicas usa cada nivel.
 
 ---
 
@@ -432,8 +440,8 @@ Orden obligatorio. No saltarse pasos.
 8. **Test de propiedad**: generar N=200 niveles con la mecánica; todos deben ser resolubles (solver), deterministas con la misma semilla y sin errores de `validateLevel`.
 9. **Test de combinación** con cada mecánica NO conflictiva (mínimo 20 niveles por pareja).
 10. **Nivel tutorial** a mano (introducción aislada) + 3-5 niveles de "mecánica + básicos".
-11. **Desbloqueo**: añadir `unlockLevel` en el manifest (y desplazar las siguientes si hace falta).
-12. **Actualizar este documento**: tabla de la sección 3 + matriz de sinergias (sección 15).
+11. **Lanzamiento**: `npm run mechanic:release -- <id>` (debut en el primer nivel no publicado) + `gen:levels` de los niveles nuevos. Nunca se mueve un debut ya publicado.
+12. **Actualizar este documento**: tabla de la sección 3, `docs/mechanics/IDEAS.md` + matriz de sinergias (sección 15).
 13. **Generar y validar**: `npm run gen:levels` + `npm run validate:levels`.
 
 **Definition of done de una mecánica:** pasos 1-13 completos, tests verdes y al menos un "momento aha" documentado en la ficha.
@@ -455,12 +463,14 @@ Orden obligatorio. No saltarse pasos.
 |---|---|---|---|---|---|---|---|---|
 | **walls** | – | ○ | ○ | ○ | ○ | ○ | ○ | ○ |
 | **portals** | ○ | – | ✔ salir deslizando | ○ | ✔ portal con puerta | ○ | ✔ portal en cinta | ○ |
-| **ice** | ○ | ✔ | – | ✖ ¿romper en deslizamiento? (definir) | ○ | ○ | ✔ | ○ |
-| **fragile** | ○ | ○ | ✖/definir | – | ○ | ○ | ✔ cinta rompe hoja | ○ |
+| **ice** | ○ | ✔ | – | definir (propuesta: deslizar cuenta como cruzar) | ○ | ○ | ✔ | ○ |
+| **fragile** | ○ | ○ | definir | – | ○ | ○ | ✔ cinta rompe hoja | ○ |
 | **switches** | ○ | ✔ | ○ | ○ | – | ○ | ○ | ✔ interruptor despierta |
 | **capacity** | ○ | ○ | ○ | ○ | ○ | – | ○ | ○ |
 | **conveyor** | ○ | ✔ | ✔ | ✔ | ○ | ○ | – | ○ |
 | **sleepers** | ○ | ○ | ○ | ○ | ✔ | ○ | ○ | – |
+
+> **locked-holes** (añadida tras la tabla): ✔ con `fragile` (aparcar al gecko que espera puede gastar hojas); `capacity` por definir; resto ○. Detalle en `docs/mechanics/locked-holes.md`.
 
 > Las celdas "definir" son decisiones de diseño pendientes. Se resuelven al implementar la segunda mecánica de la pareja y se documentan en AMBAS fichas.
 

@@ -2,7 +2,8 @@ import { DIRECTIONS, cellKey, manhattan, moveCell } from "../engine/cell";
 import { step } from "../engine/pipeline";
 import { findPath } from "../engine/path";
 import { createInitialState, createRules, stateKey } from "../engine/state";
-import type { Cell, DifficultyTier, GameState, Gecko, GeckoColor, GeckoDef, HoleDef, Level, Mechanic } from "../engine/types";
+import { validateLevel } from "../engine/validate";
+import type { Cell, DifficultyTier, GameState, Gecko, GeckoColor, GeckoDef, HoleDef, Level, Mechanic, TimelineEntry } from "../engine/types";
 import { dragTargets, minParkings } from "../solver/parking";
 import { heuristic, solve } from "../solver/solve";
 import type { SolveResult } from "../solver/solve";
@@ -64,7 +65,8 @@ export interface Evaluation {
 
 export interface GenerateOptions {
 	registry: Record<string, Mechanic>;
-	unlocks: Record<string, number>;
+	/** When each mechanic debuts (manifest.timeline). */
+	timeline: readonly TimelineEntry[];
 	/** Overrides the number of scrambles (tests use fewer). */
 	candidates?: number;
 }
@@ -75,7 +77,12 @@ interface Candidate {
 	tier: DifficultyTier;
 	/** Steps of the solution the parking search found; fallback when the solver runs out of budget. */
 	steps: number;
+	/** False when the mechanic being taught turned out to be avoidable (see Mechanic.withoutMechanic). */
+	teaches: boolean;
 }
+
+/** Ranking penalty for a teaching level whose mechanic is decorative: any tier miss is preferable. */
+const DECORATIVE_PENALTY = 10;
 
 /**
  * Reverse generation (GAME_DESIGN.md §4.2): every gecko starts one step away from its hole, then
@@ -87,12 +94,20 @@ interface Candidate {
  * snapshot reaches it, the closest one is used and labelled with what it really is.
  */
 export function generateLevel(n: number, options: GenerateOptions): Level {
-	const params = paramsFor(n, options.unlocks);
+	const params = paramsFor(n, options.timeline, options.registry);
 	const seed = hashSeed(n, GENERATOR_VERSION);
 	const rng = new Rng(seed);
 	const scrambles = options.candidates ?? BASE_SCRAMBLES + EXTRA_SCRAMBLES_PER_TIER * params.targetTier;
 	let best: Candidate | undefined;
-	const distance = (c: Candidate): number => Math.abs(c.tier - params.targetTier);
+	const distance = (c: Candidate): number => Math.abs(c.tier - params.targetTier) + (c.teaches ? 0 : DECORATIVE_PENALTY);
+	const tierGap = (c: Candidate): number => Math.abs(c.tier - params.targetTier);
+	// Search depth: by default only up to the target tier (deeper searches are what makes hard levels
+	// slow). The last-resort pass below relaxes it so a twist that makes every board harder than the
+	// target still yields a level instead of none.
+	let maxDepth = Math.min(3, params.targetTier);
+	const measure = (level: Level): Candidate | undefined => measureCandidate(level, maxDepth, options.registry);
+	// The teaching check is a second parking search, so it only runs on candidates that could win.
+	const teaches = (level: Level): boolean => teachesFocus(level, params, options.registry);
 	// Easy levels come from reverse scrambles; harder ones from crowded random boards, which are far
 	// more likely to need parking drags (see OCCUPANCY_BY_TIER). minParkings proves them solvable.
 	const reverse = (count: number): (() => Level[])[] =>
@@ -104,16 +119,17 @@ export function generateLevel(n: number, options: GenerateOptions): Level {
 		});
 	const search = (sources: (() => Level[])[]): void => {
 		for (let i = 0; i < sources.length && (!best || distance(best) > 0); i++) {
-			for (const level of sources[i]()) {
-				const rules = createRules(level, options.registry);
-				const maxDepth = Math.min(3, params.targetTier);
-				const { parkings, exhausted, steps } = minParkings(rules, createInitialState(rules), { ...PARKING_SEARCH, maxDepth });
-				if (!Number.isFinite(parkings) || exhausted) {
+			for (const board of sources[i]()) {
+				const level = populateTwists(board, params, rng, options.registry);
+				const candidate = level && measure(level);
+				if (!candidate) {
 					continue;
 				}
-				const candidate: Candidate = { level, parkings, steps, tier: tierFor(parkings, level.geckos.length) };
-				if (!best || distance(candidate) < distance(best)) {
-					best = candidate;
+				if (!best || tierGap(candidate) < distance(best)) {
+					candidate.teaches = teaches(candidate.level);
+					if (!best || distance(candidate) < distance(best)) {
+						best = candidate;
+					}
 				}
 				if (distance(best) === 0) {
 					break;
@@ -130,14 +146,24 @@ export function generateLevel(n: number, options: GenerateOptions): Level {
 			search(reverse(BASE_SCRAMBLES));
 		}
 	}
+	if (!best) {
+		maxDepth = 3;
+		search(reverse(BASE_SCRAMBLES * 2));
+	}
 	if (best && distance(best) > 0 && best.tier < params.targetTier) {
-		best = climb(best, params.targetTier, rng, options.registry);
+		best = climb(best, params.targetTier, rng, options.registry, measure, teaches);
 	}
 	if (!best) {
 		throw new Error(`generator: no acceptable candidate for level ${n} (seed ${seed})`);
 	}
 	// The parking search already found a full solution, so its step count is a valid fallback.
 	const evaluation = evaluateLevel(best.level, options.registry, best.steps);
+	const focus = params.focus;
+	if (focus && focus.debut === n) {
+		// A generated debut doubles as the mechanic's tutorial.
+		const { tutorialHint: hint, name } = options.registry[focus.id];
+		best = { ...best, level: { ...best.level, tutorial: true, ...(name ? { name } : {}), ...(hint ? { hint } : {}) } };
+	}
 	if (!evaluation) {
 		throw new Error(`generator: level ${n} (seed ${seed}) could not be solved`);
 	}
@@ -146,34 +172,91 @@ export function generateLevel(n: number, options: GenerateOptions): Level {
 
 /**
  * Local search towards the target tier: propose a random drag of a random gecko and keep it unless it
- * makes the level easier. Every state reachable through reversible moves stays solvable, so the
- * reverse-generation guarantee holds.
+ * makes the level easier. Each proposal is a new starting position, re-measured from scratch, so it is
+ * only kept when the parking search proves it solvable.
  */
-function climb(start: Candidate, target: DifficultyTier, rng: Rng, registry: Record<string, Mechanic>): Candidate {
-	const rules = createRules(start.level, registry);
-	let state = createInitialState(rules);
-	let current = start.parkings;
+function climb(
+	start: Candidate,
+	target: DifficultyTier,
+	rng: Rng,
+	registry: Record<string, Mechanic>,
+	measure: (level: Level) => Candidate | undefined,
+	teaches: (level: Level) => boolean,
+): Candidate {
+	let current = start;
 	let best = start;
 	for (let i = 0; i < CLIMB_PROPOSALS && best.tier < target; i++) {
-		const free = state.geckos.filter((g) => !g.saved);
-		const gecko = rng.pick(free);
+		const rules = createRules(current.level, registry);
+		const state = createInitialState(rules);
+		const gecko = rng.pick(state.geckos);
 		const options = dragTargets(rules, state, gecko.id, rng.chance(0.5) ? "head" : "tail", 60);
 		if (options.length === 0) {
 			continue;
 		}
 		const proposal = rng.pick(options);
-		const { parkings, exhausted, steps } = minParkings(rules, proposal, { ...PARKING_SEARCH, maxDepth: Math.min(3, target) });
-		if (!Number.isFinite(parkings) || exhausted || (parkings < current && !rng.chance(CLIMB_DOWNHILL))) {
+		if (proposal.geckos.some((g) => g.saved)) {
 			continue;
 		}
-		state = { ...proposal, steps: 0 };
-		current = parkings;
-		if (parkings > best.parkings) {
-			const level = { ...start.level, geckos: state.geckos.map((g) => ({ id: g.id, color: g.color, cells: g.cells })) };
-			best = { level, parkings, steps, tier: tierFor(parkings, level.geckos.length) };
+		const level = { ...current.level, geckos: proposal.geckos.map((g) => ({ id: g.id, color: g.color, cells: g.cells })) };
+		const candidate = measure(level);
+		if (!candidate || (candidate.parkings < current.parkings && !rng.chance(CLIMB_DOWNHILL))) {
+			continue;
+		}
+		current = candidate;
+		if (candidate.parkings > best.parkings) {
+			candidate.teaches = teaches(level);
+			if (candidate.teaches >= best.teaches) {
+				best = candidate;
+			}
 		}
 	}
 	return best;
+}
+
+/** Validates and measures a candidate. Undefined when invalid or not provably solvable. */
+function measureCandidate(level: Level, maxDepth: number, registry: Record<string, Mechanic>): Candidate | undefined {
+	if (validateLevel(level, registry).length > 0) {
+		return undefined;
+	}
+	const rules = createRules(level, registry);
+	const { parkings, exhausted, steps } = minParkings(rules, createInitialState(rules), { ...PARKING_SEARCH, maxDepth });
+	if (!Number.isFinite(parkings) || exhausted) {
+		return undefined;
+	}
+	return { level, parkings, steps, tier: tierFor(parkings, level.geckos.length), teaches: true };
+}
+
+/**
+ * Teaching levels (a mechanic in adaptation or deepening) must not let the player ignore it: the
+ * variant without the mechanic has to be unsolvable. Unproven (search exhausted) counts as teaching.
+ */
+function teachesFocus(level: Level, params: LevelParams, registry: Record<string, Mechanic>): boolean {
+	const focus = params.focus && registry[params.focus.id];
+	const data = focus && level.mechanicData[focus.id];
+	if (!focus?.withoutMechanic || data === undefined) {
+		return true;
+	}
+	const variant = focus.withoutMechanic(level, data);
+	const rules = createRules(variant, registry);
+	const avoidable = minParkings(rules, createInitialState(rules), { ...PARKING_SEARCH, maxDepth: 3 });
+	return !Number.isFinite(avoidable.parkings) || avoidable.exhausted;
+}
+
+/** Adds every twist mechanic of the level (curriculum intensity) on top of a built board. */
+function populateTwists(level: Level, params: LevelParams, rng: Rng, registry: Record<string, Mechanic>): Level | undefined {
+	let result = level;
+	for (const [id, intensity] of Object.entries(params.intensity)) {
+		const mechanic = registry[id];
+		if (!mechanic.populate) {
+			continue;
+		}
+		const data = mechanic.populate(rng, result, intensity);
+		if (data === undefined) {
+			return undefined;
+		}
+		result = { ...result, mechanicData: { ...result.mechanicData, [id]: data } };
+	}
+	return result;
 }
 
 /** Solves a level and derives its difficulty metrics. Undefined when it is not solvable. */
@@ -208,9 +291,9 @@ export function evaluateLevel(level: Level, registry: Record<string, Mechanic>, 
 /** Initial-state hash used to reject duplicates (§10). */
 export function initialKey(level: Level, registry: Record<string, Mechanic>): string {
 	const rules = createRules(level, registry);
-	const walls = JSON.stringify(level.mechanicData.walls ?? []);
+	const mechanicData = JSON.stringify(level.mechanicData);
 	const holes = level.holes.map((h) => `${h.color}@${cellKey(h.cell)}`).join(",");
-	return `${level.grid.w}x${level.grid.h}|${walls}|${holes}|${stateKey(rules, createInitialState(rules))}`;
+	return `${level.grid.w}x${level.grid.h}|${mechanicData}|${holes}|${stateKey(rules, createInitialState(rules))}`;
 }
 
 /** Single number for sorting/plots: amount of work, scaled up by ordering and detours. */

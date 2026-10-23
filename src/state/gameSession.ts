@@ -293,7 +293,7 @@ export class GameSession {
 		if (!at || sameCell(at, cell)) {
 			return false;
 		}
-		const dirs = findPath(this.rules, this.current, drag.geckoId, drag.end, cell, PATH_SEARCH_BUDGET);
+		const dirs = findPath(this.rules, this.current, drag.geckoId, drag.end, cell, PATH_SEARCH_BUDGET, true);
 		if (!dirs || dirs.length > manhattan(at, cell) + MAX_DETOUR) {
 			return false;
 		}

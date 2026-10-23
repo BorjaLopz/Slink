@@ -19,6 +19,8 @@ export const walls: Mechanic<WallsData> = {
 	id: "walls",
 	priority: 0,
 	complexity: 1,
+	basic: true,
+	name: "Muros",
 	tutorialHint: "Los muros no se pueden atravesar. Busca el pasillo.",
 
 	canEnter(ctx, _gecko, cell) {
@@ -51,14 +53,6 @@ export const walls: Mechanic<WallsData> = {
 		if (!data) {
 			return;
 		}
-		const inset = g.cellSize * 0.06;
-		const size = g.cellSize - inset * 2;
-		g.c.fillStyle = g.theme.wall;
-		for (const cell of data) {
-			const { x, y } = g.toPx(cell);
-			g.c.beginPath();
-			g.c.roundRect(x + inset, y + inset, size, size, 6);
-			g.c.fill();
-		}
+		data.forEach((cell) => g.drawRock(cell));
 	},
 };

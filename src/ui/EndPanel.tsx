@@ -1,20 +1,24 @@
 import type { ReactNode } from "react";
+import { CornerMarks } from "./CornerMarks";
 
 interface EndPanelProps {
+	label: string;
 	title: string;
 	children?: ReactNode;
 	actions: ReactNode;
 }
 
-/** Centered floating panel over the board (win, lose, pause). */
-export function EndPanel({ title, children, actions }: EndPanelProps) {
+/** Floating panel over the board for pause and time-out. */
+export function EndPanel({ label, title, children, actions }: EndPanelProps) {
 	return (
 		<div className="overlay">
-			<div className="panel" role="dialog" aria-label={title}>
-				<h2>{title}</h2>
+			<section className="panel framed" role="dialog" aria-label={title}>
+				<p className="label">{label}</p>
+				<h2 className="panel-title">{title}</h2>
 				{children}
-				<div className="panel-actions">{actions}</div>
-			</div>
+				<div className="sheet-actions">{actions}</div>
+				<CornerMarks />
+			</section>
 		</div>
 	);
 }

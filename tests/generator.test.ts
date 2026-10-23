@@ -8,9 +8,12 @@ import { minParkings } from "../src/solver/parking";
 import { solve } from "../src/solver/solve";
 import { readCatalog } from "../scripts/catalog";
 
-const UNLOCKS = { walls: 6, lengths: 12 };
+const TIMELINE = [
+	{ id: "walls", debut: 6 },
+	{ id: "lengths", debut: 12 },
+];
 // Fewer candidates keeps the suite fast; selection quality is not what is under test here.
-const FAST = { registry: REGISTRY, unlocks: UNLOCKS, candidates: 4 };
+const FAST = { registry: REGISTRY, timeline: TIMELINE, candidates: 4 };
 
 describe("Rng", () => {
 	it("is deterministic per seed and stays in range", () => {
@@ -35,14 +38,14 @@ describe("difficulty curve", () => {
 		expect(sawtooth(11)).toBeCloseTo(sawtooth(1));
 	});
 
-	it("unlocks mechanics by level and grows the board", () => {
-		expect(paramsFor(5, UNLOCKS).mechanics).toEqual(["base"]);
-		expect(paramsFor(6, UNLOCKS).mechanics).toEqual(["base", "walls"]);
-		expect(paramsFor(12, UNLOCKS).mechanics).toEqual(["base", "walls", "lengths"]);
-		expect(paramsFor(11, UNLOCKS).maxLength).toBe(3);
-		expect(paramsFor(12, UNLOCKS).minLength).toBe(2);
-		expect(paramsFor(200, UNLOCKS).w).toBeGreaterThan(paramsFor(7, UNLOCKS).w);
-		expect(paramsFor(200, UNLOCKS).w).toBeLessThanOrEqual(12);
+	it("introduces mechanics on their debut and grows the board", () => {
+		expect(paramsFor(5, TIMELINE, REGISTRY).mechanics).toEqual(["base"]);
+		expect(paramsFor(6, TIMELINE, REGISTRY).mechanics).toEqual(["base", "walls"]);
+		expect(paramsFor(12, TIMELINE, REGISTRY).mechanics).toEqual(["base", "walls", "lengths"]);
+		expect(paramsFor(11, TIMELINE, REGISTRY).maxLength).toBe(3);
+		expect(paramsFor(12, TIMELINE, REGISTRY).minLength).toBe(2);
+		expect(paramsFor(200, TIMELINE, REGISTRY).w).toBeGreaterThan(paramsFor(7, TIMELINE, REGISTRY).w);
+		expect(paramsFor(200, TIMELINE, REGISTRY).w).toBeLessThanOrEqual(12);
 	});
 
 	it("time limits grow with work and shrink as levels advance", () => {
@@ -71,7 +74,7 @@ describe("generateLevel", () => {
 			const level = generateLevel(n, FAST);
 			expect(validateLevel(level, REGISTRY)).toEqual([]);
 			expect(level.source).toBe("generated");
-			expect(level.mechanics).toEqual(paramsFor(n, UNLOCKS).mechanics);
+			expect(level.mechanics).toEqual(paramsFor(n, TIMELINE, REGISTRY).mechanics);
 			expect(level.timeLimit).toBeGreaterThan(0);
 
 			const rules = createRules(level, REGISTRY);
@@ -82,6 +85,21 @@ describe("generateLevel", () => {
 			}
 		});
 	}
+});
+
+describe("generated debut of a twist mechanic", () => {
+	const timeline = [...TIMELINE, { id: "fragile", debut: 20 }];
+
+	it("is a tutorial with the mechanic placed, valid and solvable", () => {
+		const level = generateLevel(20, { ...FAST, timeline });
+		expect(level.mechanics).toEqual(["base", "walls", "lengths", "fragile"]);
+		expect(level.tutorial).toBe(true);
+		expect(level.hint).toBe(REGISTRY.fragile.tutorialHint);
+		expect((level.mechanicData.fragile as unknown[]).length).toBeGreaterThan(0);
+		expect(validateLevel(level, REGISTRY)).toEqual([]);
+		const rules = createRules(level, REGISTRY);
+		expect(solve(rules, createInitialState(rules), { weight: 3 }).solvable).toBe(true);
+	});
 });
 
 describe("difficulty tiers", () => {

@@ -1,9 +1,16 @@
-import type { DifficultyTier } from "../engine/types";
+import type { DifficultyTier, Mechanic, TimelineEntry } from "../engine/types";
+import { planFor } from "./curriculum";
+import type { LevelPlan } from "./curriculum";
 
 /** Everything the generator needs to know about level `n` (GAME_DESIGN.md §4.1). */
 export interface LevelParams {
 	n: number;
 	mechanics: string[];
+	/** 0..1 per twist mechanic (see curriculum.ts). */
+	intensity: LevelPlan["intensity"];
+	/** Mechanic being taught on this level, if any. */
+	focus: LevelPlan["focus"];
+	boss: boolean;
 	w: number;
 	h: number;
 	geckos: number;
@@ -20,9 +27,6 @@ export interface LevelParams {
 	/** Sawtooth multiplier: ramps up inside each pack of 10, peaks on the 10th, drops on the next. */
 	saw: number;
 }
-
-/** Mechanics generator v1 knows how to place. Anything else in the unlock table is ignored here. */
-const V1_MECHANICS = ["walls", "lengths"];
 
 /** Tier by position inside each pack of 10: 6 easy, 2 medium, 1 hard and a very hard 10th level. */
 const PACK_PATTERN: readonly DifficultyTier[] = [0, 0, 1, 0, 0, 0, 2, 0, 1, 3];
@@ -64,17 +68,21 @@ export function sawtooth(n: number): number {
 	return 0.9 + 0.25 * (((n - 1) % 10) / 9);
 }
 
-export function paramsFor(n: number, unlocks: Record<string, number>): LevelParams {
-	const mechanics = ["base", ...V1_MECHANICS.filter((id) => unlocks[id] !== undefined && unlocks[id] <= n)];
+export function paramsFor(n: number, timeline: readonly TimelineEntry[], registry: Record<string, Mechanic>): LevelParams {
+	const { mechanics, intensity, focus, boss } = planFor(n, timeline, registry);
 	const saw = sawtooth(n);
 	const gridSize = Math.min(12, 5 + Math.floor(n / 20));
 	const hasLengths = mechanics.includes("lengths");
-	const lengthsSince = n - (unlocks.lengths ?? n);
-	const targetTier = targetTierFor(n);
+	const lengthsSince = n - (timeline.find((e) => e.id === "lengths")?.debut ?? n);
+	// Adaptation levels teach: always easy, whatever their position in the pack.
+	const targetTier = focus?.phase === "adaptation" ? 0 : targetTierFor(n);
 
 	return {
 		n,
 		mechanics,
+		intensity,
+		focus,
+		boss,
 		// Portrait phones: a bit taller than wide.
 		w: gridSize,
 		h: Math.min(14, gridSize + 2),

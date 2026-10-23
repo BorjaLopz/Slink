@@ -33,14 +33,18 @@ function save(next: Progress): void {
 	listeners.forEach((l) => l());
 }
 
-/** Keeps the best result per level: more stars, or the same stars in less time. */
-export function recordWin(levelId: number, stars: Stars, seconds: number): void {
+/**
+ * Keeps the best result per level: more stars, or the same stars in less time. Returns the best time
+ * before this win (undefined on a first win) so the victory panel can show the old record.
+ */
+export function recordWin(levelId: number, stars: Stars, seconds: number): number | undefined {
 	const previousStars = progress.stars[levelId] ?? 0;
-	const previousTime = progress.bestTimes[levelId] ?? Infinity;
+	const previousTime = progress.bestTimes[levelId];
 	save({
 		stars: { ...progress.stars, [levelId]: Math.max(previousStars, stars) as Stars },
-		bestTimes: { ...progress.bestTimes, [levelId]: Math.min(previousTime, Math.round(seconds * 10) / 10) },
+		bestTimes: { ...progress.bestTimes, [levelId]: Math.min(previousTime ?? Infinity, Math.round(seconds * 10) / 10) },
 	});
+	return previousTime;
 }
 
 /** A level is playable once the previous one has been beaten. */

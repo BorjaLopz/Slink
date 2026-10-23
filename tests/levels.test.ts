@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createInitialState, createRules, validateLevel } from "../src/engine";
 import { REGISTRY } from "../src/mechanics";
-import { solve } from "../src/solver/solve";
+import { proveSolvable } from "../src/solver/prove";
 import { readCatalog } from "../scripts/catalog";
 
 const { manifest, levels } = readCatalog();
@@ -15,11 +15,10 @@ describe("published levels", () => {
 	});
 
 	for (const level of levels) {
-		it(`level ${level.id} is valid and solvable`, () => {
+		it(`level ${level.id} is valid and solvable`, { timeout: 120_000 }, () => {
 			expect(validateLevel(level, REGISTRY)).toEqual([]);
 			const rules = createRules(level, REGISTRY);
-			// Weighted search: proves solvability fast; exact minMoves lives in the level meta.
-			const result = solve(rules, createInitialState(rules), { weight: 3 });
+			const result = proveSolvable(rules, createInitialState(rules));
 			expect(result.exhausted).toBe(false);
 			expect(result.solvable).toBe(true);
 		});

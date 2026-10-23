@@ -1,6 +1,6 @@
 {
-	"version": 6,
-	"generatedAt": "2026-10-22T16:23:01.561Z",
+	"version": 11,
+	"generatedAt": "2026-10-23T19:15:08.291Z",
 	"packs": [
 		{
 			"file": "pack-0001.json",
@@ -26,11 +26,41 @@
 			"file": "pack-0005.json",
 			"from": 41,
 			"to": 50
+		},
+		{
+			"file": "pack-0006.json",
+			"from": 51,
+			"to": 60
+		},
+		{
+			"file": "pack-0007.json",
+			"from": 61,
+			"to": 70
+		},
+		{
+			"file": "pack-0008.json",
+			"from": 71,
+			"to": 80
 		}
 	],
-	"mechanicsUnlock": {
-		"walls": 6,
-		"lengths": 12,
-		"portals": 25
-	}
+	"timeline": [
+		{
+			"id": "walls",
+			"debut": 6
+		},
+		{
+			"id": "lengths",
+			"debut": 12
+		},
+		{
+			"id": "fragile",
+			"debut": 20
+		},
+		{
+			"id": "locked-holes",
+			"debut": 51
+		}
+	],
+	"frozenThrough": 50,
+	"frozenHash": "43500c8b22bb2855"
 }

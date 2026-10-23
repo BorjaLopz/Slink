@@ -1,8 +1,9 @@
 import { createInitialState, createRules, validateLevel } from "../src/engine";
+import { planFor } from "../src/generator/curriculum";
 import { generateLevel, initialKey } from "../src/generator/generate";
 import { REGISTRY } from "../src/mechanics";
-import { solve } from "../src/solver/solve";
-import { PACK_SIZE, readCatalog } from "./catalog";
+import { proveSolvable } from "../src/solver/prove";
+import { PACK_SIZE, frozenHash, readCatalog } from "./catalog";
 
 // npm run validate:levels [-- --deep]   (--deep also regenerates every generated level from its seed)
 const deep = process.argv.includes("--deep");
@@ -34,24 +35,42 @@ for (const level of levels) {
 	seen.set(key, level.id);
 
 	const rules = createRules(level, REGISTRY);
-	const result = solve(rules, createInitialState(rules), { weight: 3, maxStates: 100_000 });
+	const result = proveSolvable(rules, createInitialState(rules));
 	if (!result.solvable) {
 		errors.push(`level ${level.id}: ${result.exhausted ? "solver budget exhausted" : "NOT solvable"}`);
 	}
 
 	if (deep && level.source === "generated") {
-		const again = generateLevel(level.id, { registry: REGISTRY, unlocks: manifest.mechanicsUnlock });
+		const again = generateLevel(level.id, { registry: REGISTRY, timeline: manifest.timeline });
 		if (JSON.stringify(again.geckos) !== JSON.stringify(level.geckos)) {
 			errors.push(`level ${level.id}: seed ${level.seed} no longer reproduces this level`);
 		}
 	}
 }
 
-// A mechanic must debut in a tutorial level (§3 golden rule).
-for (const id of Object.keys(manifest.mechanicsUnlock)) {
-	const first = levels.find((l) => l.mechanics.includes(id));
-	if (first && !first.tutorial) {
-		errors.push(`mechanic "${id}" debuts in level ${first.id}, which is not marked as tutorial`);
+if (manifest.frozenHash && frozenHash(levels, manifest.frozenThrough) !== manifest.frozenHash) {
+	errors.push(`levels 1-${manifest.frozenThrough} are published (frozen) but their content changed`);
+}
+
+// Progression rules (GAME_DESIGN.md §4.1.b): every mechanic debuts as a tutorial on its timeline
+// level, nothing appears before its debut, and generated levels follow the curriculum exactly.
+for (const entry of manifest.timeline) {
+	if (!REGISTRY[entry.id]) {
+		errors.push(`timeline: unknown mechanic "${entry.id}"`);
+	}
+	const debut = levels.find((l) => l.id === entry.debut);
+	if (debut && (!debut.tutorial || !debut.mechanics.includes(entry.id))) {
+		errors.push(`mechanic "${entry.id}" must debut in level ${entry.debut} as a tutorial`);
+	}
+}
+for (const level of levels) {
+	const early = level.mechanics.filter((id) => id !== "base" && !manifest.timeline.some((e) => e.id === id && e.debut <= level.id));
+	if (early.length > 0) {
+		errors.push(`level ${level.id}: uses ${early.join(", ")} before its debut`);
+	}
+	const planned = planFor(level.id, manifest.timeline, REGISTRY).mechanics;
+	if (level.source === "generated" && level.mechanics.join() !== planned.join()) {
+		errors.push(`level ${level.id}: mechanics [${level.mechanics.join(", ")}] differ from the curriculum [${planned.join(", ")}]`);
 	}
 }
 
